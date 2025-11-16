@@ -60,14 +60,15 @@ public:
     std::string Name;
     Pin* InputPin;
     std::vector<Pin*> OutputPins;
-    Node* InputNode;
+    Node* InputNode = nullptr;
     std::vector<Node*> OutputNode;
     ImColor Color;
     NodeType Type = NodeType::Basic;
     ImVec2 Start_pos;
+    
+    std::string description = "";
 
-
-    Node(ed::NodeId ID, std::string Name, Pin* InputPin, std::vector<Pin*> OutputPins, ImVec2 Start_pos)
+    Node(ed::NodeId ID, std::string Name, Pin* InputPin, std::vector<Pin*> OutputPins, ImVec2 Start_pos, std::string desc = "")
     {
         this->ID = ID;
         this->Name = Name;
@@ -80,6 +81,7 @@ public:
         {
             pin->NodePtr = this;
         }
+        this->description = desc;
 
     }
     // Remove this node's pins from a global/shared pin list
@@ -115,5 +117,14 @@ public:
 };
 
 
+
+struct function
+{
+    std::string Name;
+    PinType input;
+    PinType output[10];
+    int output_size;
+    std::string description = "";
+};
 
 

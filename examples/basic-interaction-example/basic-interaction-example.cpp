@@ -2,9 +2,33 @@
 #include <imgui_node_editor.h>
 #include <application.h>
 #include <vector>
+#include <fstream>
+#include <cctype>
 #include "Nodes.h"
 
 namespace ed = ax::NodeEditor;
+
+
+static bool StartsWithCaseInsensitive(const std::string& text, const std::string& prefix)
+{
+    if (prefix.empty())
+        return true;
+
+    if (text.size() < prefix.size())
+        return false;
+
+    for (std::size_t i = 0; i < prefix.size(); ++i)
+    {
+        unsigned char c1 = static_cast<unsigned char>(text[i]);
+        unsigned char c2 = static_cast<unsigned char>(prefix[i]);
+        if (std::tolower(c1) != std::tolower(c2))
+            return false;
+    }
+
+    return true;
+}
+
+
 
 struct Example:
     public Application
@@ -14,6 +38,19 @@ struct Example:
     std::vector<Node*> Nodes{};
     std::vector<LinkInfo*> Links{};
     std::vector<Pin*> Pins{};
+
+    std::vector<function> funcs{};
+
+
+    // --- Quick node creation UI ("Shift + A") ---
+    bool   m_ShowCreateNode = false;
+    bool   m_FocusCreateNodeSearch = false;
+    ImVec2 m_CreateNodePosCanvas = ImVec2(0.0f, 0.0f);
+    ImVec2 m_CreateNodePopupPos = ImVec2(0.0f, 0.0f);
+    char   m_CreateNodeFilter[64] = { 0 };   // text filter (function name prefix)
+    int    m_CreateNodeTypeFilter = 0;       // 0 = All, 1..N = specific PinType
+
+
     Pin* MakePin(PinType type, PinKind kind)
     {
         auto* pin = new Pin{ ed::PinId(uniqueId++), type, kind };
@@ -38,6 +75,233 @@ struct Example:
 
         return node;
     }
+
+    Node* NodeFromFunciton(const function& f, ImVec2 startPos)
+    {
+
+        Node* node = nullptr;
+
+        switch (f.output_size)
+        {
+        case 0:
+            node = MakeBasicNode(f.Name, f.input, {}, startPos);
+            break;
+        case 1:
+            node = MakeBasicNode(f.Name, f.input,
+                { f.output[0] }, startPos);
+            break;
+        case 2:
+            node = MakeBasicNode(f.Name, f.input,
+                { f.output[0], f.output[1] }, startPos);
+            break;
+        case 3:
+            node = MakeBasicNode(f.Name, f.input,
+                { f.output[0], f.output[1], f.output[2] }, startPos);
+            break;
+        case 4:
+            node = MakeBasicNode(f.Name, f.input,
+                { f.output[0], f.output[1], f.output[2], f.output[3] }, startPos);
+            break;
+        case 5:
+            node = MakeBasicNode(f.Name, f.input,
+                { f.output[0], f.output[1], f.output[2], f.output[3],
+                  f.output[4] }, startPos);
+            break;
+        case 6:
+            node = MakeBasicNode(f.Name, f.input,
+                { f.output[0], f.output[1], f.output[2], f.output[3],
+                  f.output[4], f.output[5] }, startPos);
+            break;
+        case 7:
+            node = MakeBasicNode(f.Name, f.input,
+                { f.output[0], f.output[1], f.output[2], f.output[3],
+                  f.output[4], f.output[5], f.output[6] }, startPos);
+            break;
+        case 8:
+            node = MakeBasicNode(f.Name, f.input,
+                { f.output[0], f.output[1], f.output[2], f.output[3],
+                  f.output[4], f.output[5], f.output[6], f.output[7] }, startPos);
+            break;
+        case 9:
+            node = MakeBasicNode(f.Name, f.input,
+                { f.output[0], f.output[1], f.output[2], f.output[3],
+                  f.output[4], f.output[5], f.output[6], f.output[7],
+                  f.output[8] }, startPos);
+            break;
+        default: // 10 or more: clamp to first 10 (struct only stores 10)
+            node = MakeBasicNode(f.Name, f.input,
+                { f.output[0], f.output[1], f.output[2], f.output[3],
+                  f.output[4], f.output[5], f.output[6], f.output[7],
+                  f.output[8], f.output[9] }, startPos);
+            break;
+        }
+
+        if (node)
+        {
+            node->description = f.description;
+
+        }
+
+        return node;
+    }
+
+
+
+    void ParseModInfo(std::vector<function>& dir)
+    {
+        dir.clear();
+
+        std::ifstream file("E:\\Steam stuff\\steamapps\\common\\Cube Chaos\\ModdingInfo.txt");
+        if (!file.is_open())
+            return; 
+
+        std::string line;
+        bool hasCategory = false;
+        PinType currentCategory = PinType::Trigger; // dummy init
+
+        while (std::getline(file, line))
+        {
+            // trim whitespace from both ends
+            std::size_t start = 0;
+            while (start < line.size() && std::isspace(static_cast<unsigned char>(line[start])))
+                ++start;
+
+            std::size_t end = line.size();
+            while (end > start && std::isspace(static_cast<unsigned char>(line[end - 1])))
+                --end;
+
+            if (start >= end)
+                continue;
+
+            std::string trimmed = line.substr(start, end - start);
+
+            if (trimmed == "Modding Info")
+                continue;
+
+            // category header: e.g. "Trigger:"
+            if (trimmed.back() == ':')
+            {
+                std::string cat = trimmed.substr(0, trimmed.size() - 1);
+
+                hasCategory = true;
+                if (cat == "Trigger")   currentCategory = PinType::Trigger;
+                else if (cat == "Action")    currentCategory = PinType::Action;
+                else if (cat == "BOOLEAN")   currentCategory = PinType::Boolean;
+                else if (cat == "CUBE")      currentCategory = PinType::Cube;
+                else if (cat == "DIRECTION") currentCategory = PinType::Direction;
+                else if (cat == "DOUBLE")    currentCategory = PinType::Double;
+                else if (cat == "PERK")      currentCategory = PinType::Perk;
+                else if (cat == "POSITION")  currentCategory = PinType::Position;
+                else if (cat == "STRING")    currentCategory = PinType::String;
+                else if (cat == "ABILITY")   currentCategory = PinType::Ability;
+                else
+                    hasCategory = false; // unknown category, skip until next known
+
+                continue;
+            }
+
+            if (!hasCategory)
+                continue;
+
+            // split into before/inside quotes
+            std::string beforeQuote = trimmed;
+            std::string description;
+
+            std::size_t firstQuote = trimmed.find('"');
+            if (firstQuote != std::string::npos)
+            {
+                beforeQuote = trimmed.substr(0, firstQuote);
+
+                std::size_t lastQuote = trimmed.find_last_of('"');
+                if (lastQuote != std::string::npos && lastQuote > firstQuote)
+                {
+                    // raw description (keeps colour codes etc.; you can clean it later if you want)
+                    description = trimmed.substr(firstQuote + 1, lastQuote - firstQuote - 1);
+                }
+            }
+
+            // re-trim beforeQuote
+            std::size_t bs = 0;
+            while (bs < beforeQuote.size() && std::isspace(static_cast<unsigned char>(beforeQuote[bs])))
+                ++bs;
+            std::size_t be = beforeQuote.size();
+            while (be > bs && std::isspace(static_cast<unsigned char>(beforeQuote[be - 1])))
+                --be;
+
+            if (bs >= be)
+                continue;
+
+            beforeQuote = beforeQuote.substr(bs, be - bs);
+
+            // tokenize by whitespace
+            std::vector<std::string> tokens;
+            std::size_t pos = 0;
+            while (pos < beforeQuote.size())
+            {
+                while (pos < beforeQuote.size() &&
+                    std::isspace(static_cast<unsigned char>(beforeQuote[pos])))
+                    ++pos;
+
+                if (pos >= beforeQuote.size())
+                    break;
+
+                std::size_t j = pos;
+                while (j < beforeQuote.size() &&
+                    !std::isspace(static_cast<unsigned char>(beforeQuote[j])))
+                    ++j;
+
+                tokens.emplace_back(beforeQuote.substr(pos, j - pos));
+                pos = j;
+            }
+
+            if (tokens.empty())
+                continue;
+
+            function f;
+            f.Name = tokens[0];
+            f.input = currentCategory;
+            f.output_size = 0;
+            f.description = description;
+
+            // map argument tokens to PinType outputs
+            for (std::size_t i = 1; i < tokens.size() && f.output_size < 10; ++i)
+            {
+                const std::string& t = tokens[i];
+                PinType pt;
+                bool isType = true;
+
+                if (t == "Ability")                 pt = PinType::Ability;
+                else if (t == "Action")                  pt = PinType::Action;
+                else if (t == "Boolean")                 pt = PinType::Boolean;
+                else if (t == "CUBE" || t == "Cube")     pt = PinType::Cube;
+                else if (t == "DIRECTION" || t == "Direction")
+                    pt = PinType::Direction;
+                else if (t == "DOUBLE" || t == "Double" ||
+                    t == "TIME" || t == "Time" ||
+                    t == "CONSTANT" || t == "Constant" ||
+                    t == "STACKING" || t == "Stacking")
+                    pt = PinType::Double;
+                else if (t == "PERK" || t == "Perk")     pt = PinType::Perk;
+                else if (t == "POSITION" || t == "Position")
+                    pt = PinType::Position;
+                else if (t == "STRING" || t == "String" ||
+                    t == "WORD" || t == "Name" || t == "NAME")
+                    pt = PinType::String;
+                else if (t == "TRIGGER" || t == "Trigger")
+                    pt = PinType::Trigger;
+                else
+                    isType = false;
+
+                if (isType)
+                {
+                    f.output[f.output_size++] = pt;
+                }
+            }
+
+            dir.push_back(f);
+        }
+    }
+
 
     void DrawNode(Node* node) const
     {
@@ -92,6 +356,7 @@ struct Example:
         MakeBasicNode("DirectionFromPosToPos", PinType::Direction, { PinType::Position, PinType::Direction }, { 0,0 });
         MakeBasicNode("hi", PinType::Direction, { PinType::Position, PinType::Direction }, { 0,0 });
         MakeBasicNode("love!", PinType::Direction, { PinType::Position, PinType::Direction }, { 0,0 });
+        ParseModInfo(funcs);
         ;
     }
 
@@ -127,8 +392,40 @@ struct Example:
 
         ed::SetCurrentEditor(m_Context);
 
+
+
+
+        // ---------------------------------------------------------------------
+   // 1) Keyboard shortcut: Shift + A opens the "create node" search popup
+   // ---------------------------------------------------------------------
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+        {
+            // Don't trigger while another input is active
+            if (!ImGui::IsAnyItemActive() && !ImGui::IsAnyItemFocused())
+            {
+                // Map ImGuiKey_A -> index in io.KeysDown[]
+                int keyAIndex = ImGui::GetKeyIndex(ImGuiKey_A);
+
+                if (io.KeyShift && ImGui::IsKeyPressed(keyAIndex, false))
+                {
+                    m_ShowCreateNode = true;
+                    m_FocusCreateNodeSearch = true;
+
+                    ImVec2 mouseScreen = ImGui::GetMousePos();
+                    
+
+                    m_CreateNodePopupPos = mouseScreen;
+                    m_CreateNodePosCanvas = ed::ScreenToCanvas(mouseScreen);
+
+
+                    m_CreateNodeFilter[0] = '\0';
+                    m_CreateNodeTypeFilter = 0;
+                }
+            }
+        }
         // Start interaction with editor.
         ed::Begin("My Editor", ImVec2(0.0, 0.0f));
+
         DrawNodes(Nodes);
 
         // Submit Links
@@ -254,6 +551,136 @@ struct Example:
 
         // End of interaction with editor.
         ed::End();
+
+
+
+        if (m_ShowCreateNode)
+        {
+            // Position popup near where the user opened it
+            ImGui::SetNextWindowPos(m_CreateNodePopupPos, ImGuiCond_Always);
+
+            ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize
+                | ImGuiWindowFlags_NoSavedSettings
+                | ImGuiWindowFlags_NoCollapse;
+
+            if (ImGui::Begin("Create Node", &m_ShowCreateNode, flags))
+            {
+                if (m_FocusCreateNodeSearch)
+                {
+                    ImGui::SetKeyboardFocusHere();
+                    m_FocusCreateNodeSearch = false;
+                }
+
+                ImGui::Text("Search function:");
+                ImGui::InputText("##Filter", m_CreateNodeFilter, IM_ARRAYSIZE(m_CreateNodeFilter));
+
+                // Type filter combo
+                // 0 = All, 1..N map to PinType values
+                static const PinType s_TypeOptions[] = {
+                    PinType::Trigger,
+                    PinType::Action,
+                    PinType::Boolean,
+                    PinType::Cube,
+                    PinType::Direction,
+                    PinType::Double,
+                    PinType::Perk,
+                    PinType::Position,
+                    PinType::String,
+                    PinType::Ability
+                };
+
+                const char* typeLabels[] = {
+                    "All",
+                    "Trigger",
+                    "Action",
+                    "Boolean",
+                    "Cube",
+                    "Direction",
+                    "Double",
+                    "Perk",
+                    "Position",
+                    "String",
+                    "Ability"
+                };
+
+                static_assert(IM_ARRAYSIZE(typeLabels) == IM_ARRAYSIZE(s_TypeOptions) + 1,
+                    "Labels and type options size mismatch");
+
+                ImGui::Separator();
+
+                ImGui::Text("Input type:");
+                ImGui::SameLine();
+                if (ImGui::BeginCombo("##TypeFilter", typeLabels[m_CreateNodeTypeFilter]))
+                {
+                    for (int i = 0; i < IM_ARRAYSIZE(typeLabels); ++i)
+                    {
+                        bool selected = (i == m_CreateNodeTypeFilter);
+                        if (ImGui::Selectable(typeLabels[i], selected))
+                            m_CreateNodeTypeFilter = i;
+                        if (selected)
+                            ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+
+                ImGui::Separator();
+                ImGui::Text("Results:");
+
+                // Close with Escape
+                if (ImGui::IsKeyPressed(ImGuiKey_Escape))
+                {
+                    m_ShowCreateNode = false;
+                }
+
+                // List of matching functions inside a scrollable region
+                ImGui::BeginChild("##FunctionList", ImVec2(300.0f, 300.0f), true);
+
+                const std::string prefix = m_CreateNodeFilter;
+
+                for (std::size_t i = 0; i < funcs.size(); ++i)
+                {
+                    const function& f = funcs[i];
+
+                    // Type filter
+                    if (m_CreateNodeTypeFilter != 0)
+                    {
+                        PinType expected = s_TypeOptions[m_CreateNodeTypeFilter - 1];
+                        if (f.input != expected)
+                            continue;
+                    }
+
+                    // Name prefix filter (case-insensitive)
+                    if (!prefix.empty() && !StartsWithCaseInsensitive(f.Name, prefix))
+                        continue;
+
+                    if (ImGui::Selectable(f.Name.c_str()))
+                    {
+                        // Create node at stored canvas position
+                        Node* created = NodeFromFunciton(f, m_CreateNodePosCanvas);
+                        if (created)
+                        {
+                            ed::SetNodePosition(created->ID, m_CreateNodePosCanvas);
+                        }
+
+                        m_ShowCreateNode = false;
+                        break;
+                    }
+                }
+
+                ImGui::EndChild();
+
+                ImGui::End();
+            }
+            else
+            {
+                // Window closed via close button
+                m_ShowCreateNode = false;
+            }
+        }
+
+
+
+
 
         if (m_FirstFrame)
             ed::NavigateToContent(0.0f);
