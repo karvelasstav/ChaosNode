@@ -1,22 +1,84 @@
-﻿# include <imgui.h>
-# include <imgui_node_editor.h>
-# include <application.h>
+﻿#include <imgui.h>
+#include <imgui_node_editor.h>
+#include <application.h>
+#include <vector>
+#include "Nodes.h"
 
 namespace ed = ax::NodeEditor;
 
 struct Example:
     public Application
 {
-    // Struct to hold basic information about connection between
-    // pins. Note that connection (aka. link) has its own ID.
-    // This is useful later with dealing with selections, deletion
-    // or other operations.
-    struct LinkInfo
+    int uniqueId = 1;
+   
+    std::vector<Node*> Nodes{};
+    std::vector<LinkInfo*> Links{};
+
+    Pin* MakePin(PinType type, PinKind kind)
     {
-        ed::LinkId Id;
-        ed::PinId  InputId;
-        ed::PinId  OutputId;
-    };
+        auto* pin = new Pin{ ed::PinId(uniqueId++), type, kind };
+        return pin;
+    }
+
+    Node* MakeBasicNode(const std::string& name,
+        PinType inputType,
+        std::initializer_list<PinType> outputTypes,
+        ImVec2 startPos)
+    {
+        Pin* inputPin = MakePin(inputType, PinKind::Input);
+
+        std::vector<Pin*> outputs;
+        outputs.reserve(outputTypes.size());
+        for (auto t : outputTypes)
+            outputs.push_back(MakePin(t, PinKind::Output));
+
+        auto* node = new Node{ ed::NodeId(uniqueId++), name, inputPin, std::move(outputs), startPos };
+        Nodes.push_back(node);
+
+        return node;
+    }
+
+    void DrawNode(Node* node) const
+    {
+        if (m_FirstFrame)
+            ed::SetNodePosition(node->ID, node->Start_pos);
+
+        ed::BeginNode(node->ID);
+        ImGui::Text(node->Name.c_str());
+
+        // Left side: input
+        ImGui::BeginGroup();
+        if (node->Type != NodeType::Primary && node->InputPin)
+        {
+            ed::BeginPin(node->InputPin->ID, ed::PinKind::Input);
+            ImGui::Text(ToString(node->InputPin->Type));
+            ed::EndPin();
+        }
+        ImGui::EndGroup();
+
+        ImGui::SameLine();
+
+        // Right side: outputs
+        ImGui::BeginGroup();
+        for (auto* out : node->OutputPins)
+        {
+            ed::BeginPin(out->ID, ed::PinKind::Output);
+            ImGui::Text(ToString(out->Type));
+            ed::EndPin();
+        }
+        ImGui::EndGroup();
+
+        ed::EndNode();
+    }
+
+
+    void DrawNodes(std::vector<Node*> nodes)
+    {
+        for (Node* node : nodes)
+        {
+            DrawNode(node);
+        }
+    }
 
     using Application::Application;
 
@@ -25,6 +87,11 @@ struct Example:
         ed::Config config;
         config.SettingsFile = "BasicInteraction.json";
         m_Context = ed::CreateEditor(&config);
+
+        MakeBasicNode("DirectionFromPosToPos", PinType::Direction, { PinType::Position, PinType::Direction }, { 0,0 });
+        MakeBasicNode("hi", PinType::Direction, { PinType::Position, PinType::Direction }, { 0,0 });
+        MakeBasicNode("love!", PinType::Direction, { PinType::Position, PinType::Direction }, { 0,0 });
+        ;
     }
 
     void OnStop() override
@@ -61,54 +128,7 @@ struct Example:
 
         // Start interaction with editor.
         ed::Begin("My Editor", ImVec2(0.0, 0.0f));
-
-        int uniqueId = 1;
-
-        //
-        // 1) Commit known data to editor
-        //
-
-        // Submit Node A
-        ed::NodeId nodeA_Id = uniqueId++;
-        ed::PinId  nodeA_InputPinId = uniqueId++;
-        ed::PinId  nodeA_OutputPinId = uniqueId++;
-
-        if (m_FirstFrame)
-            ed::SetNodePosition(nodeA_Id, ImVec2(10, 10));
-        ed::BeginNode(nodeA_Id);
-            ImGui::Text("Node A");
-            ed::BeginPin(nodeA_InputPinId, ed::PinKind::Input);
-                ImGui::Text("-> In");
-            ed::EndPin();
-            ImGui::SameLine();
-            ed::BeginPin(nodeA_OutputPinId, ed::PinKind::Output);
-                ImGui::Text("Out ->");
-            ed::EndPin();
-        ed::EndNode();
-
-        // Submit Node B
-        ed::NodeId nodeB_Id = uniqueId++;
-        ed::PinId  nodeB_InputPinId1 = uniqueId++;
-        ed::PinId  nodeB_InputPinId2 = uniqueId++;
-        ed::PinId  nodeB_OutputPinId = uniqueId++;
-
-        if (m_FirstFrame)
-            ed::SetNodePosition(nodeB_Id, ImVec2(210, 60));
-        ed::BeginNode(nodeB_Id);
-            ImGui::Text("Node B");
-            ImGuiEx_BeginColumn();
-                ed::BeginPin(nodeB_InputPinId1, ed::PinKind::Input);
-                    ImGui::Text("-> In1");
-                ed::EndPin();
-                ed::BeginPin(nodeB_InputPinId2, ed::PinKind::Input);
-                    ImGui::Text("-> In2");
-                ed::EndPin();
-            ImGuiEx_NextColumn();
-                ed::BeginPin(nodeB_OutputPinId, ed::PinKind::Output);
-                    ImGui::Text("Out ->");
-                ed::EndPin();
-            ImGuiEx_EndColumn();
-        ed::EndNode();
+        DrawNodes(Nodes);
 
         // Submit Links
         for (auto& linkInfo : m_Links)
@@ -160,14 +180,30 @@ struct Example:
         // Handle deletion action
         if (ed::BeginDelete())
         {
-            // There may be many links marked for deletion, let's loop over them.
+            ed::NodeId DeletedNode;
+            while (ed::QueryDeletedNode(&DeletedNode))   //delete a node
+            {
+                if (ed::AcceptDeletedItem())
+                {
+                    for (size_t i = 0; i < Nodes.size(); ++i) {
+                        Node* node = Nodes[i];
+
+                        if (node->ID == DeletedNode) {
+                            delete node;                     
+                            Nodes.erase(Nodes.begin() + i);  
+                            --i;                             
+                        }
+                    }
+                }
+            }
+
+
+
             ed::LinkId deletedLinkId;
             while (ed::QueryDeletedLink(&deletedLinkId))
             {
-                // If you agree that link can be deleted, accept deletion.
                 if (ed::AcceptDeletedItem())
                 {
-                    // Then remove link from your data.
                     for (auto& link : m_Links)
                     {
                         if (link.Id == deletedLinkId)
@@ -178,8 +214,6 @@ struct Example:
                     }
                 }
 
-                // You may reject link deletion by calling:
-                // ed::RejectDeletedItem();
             }
         }
         ed::EndDelete(); // Wrap up deletion action
