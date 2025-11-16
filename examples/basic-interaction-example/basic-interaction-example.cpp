@@ -13,10 +13,11 @@ struct Example:
    
     std::vector<Node*> Nodes{};
     std::vector<LinkInfo*> Links{};
-
+    std::vector<Pin*> Pins{};
     Pin* MakePin(PinType type, PinKind kind)
     {
         auto* pin = new Pin{ ed::PinId(uniqueId++), type, kind };
+        Pins.push_back(pin);
         return pin;
     }
 
@@ -141,8 +142,8 @@ struct Example:
         // Handle creation action, returns true if editor want to create new object (node or link)
         if (ed::BeginCreate())
         {
-            ed::PinId inputPinId, outputPinId;
-            if (ed::QueryNewLink(&inputPinId, &outputPinId))
+            ed::PinId InputPinId, OutputPinId;
+            if (ed::QueryNewLink(&InputPinId, &OutputPinId))
             {
                 // QueryNewLink returns true if editor want to create new link between pins.
                 //
@@ -156,13 +157,43 @@ struct Example:
                 //   * input invalid, output valid - user started to drag new ling from output pin
                 //   * input valid, output valid   - user dragged link over other pin, can be validated
 
-                if (inputPinId && outputPinId) // both are valid, let's accept link
+                bool Aisinput = false;
+                bool Bisinput = false;
+
+                Node* n1 = nullptr;
+                Node* n2 = nullptr; //check if same node input and output. 
+                    for (Pin* pin : Pins)
+                    {
+                        if (Aisinput && Bisinput) { break; }
+
+                        if (pin->ID == InputPinId)
+                        {
+                            n1 = pin->NodePtr;
+                            if (pin->Kind == PinKind::Input)
+                            {
+                                Aisinput = true;
+                            }
+                            
+                        }
+                        if (pin->ID == OutputPinId)
+                        {
+                            n2 = pin->NodePtr;
+                            if (pin->Kind == PinKind::Input)
+                            {
+                                Bisinput = true;
+                            }
+            
+                        }
+                    }
+                    
+
+                if (InputPinId && OutputPinId && (Aisinput ^ Bisinput)&&(n1!=n2)) // both are valid, let's accept link
                 {
                     // ed::AcceptNewItem() return true when user release mouse button.
                     if (ed::AcceptNewItem())
                     {
                         // Since we accepted new link, lets add one to our list of links.
-                        m_Links.push_back({ ed::LinkId(m_NextLinkId++), inputPinId, outputPinId });
+                        m_Links.push_back({ ed::LinkId(m_NextLinkId++), InputPinId, OutputPinId });
 
                         // Draw new link.
                         ed::Link(m_Links.back().Id, m_Links.back().InputId, m_Links.back().OutputId);
@@ -189,6 +220,7 @@ struct Example:
                         Node* node = Nodes[i];
 
                         if (node->ID == DeletedNode) {
+                            node->RemovePinsFrom(Pins);
                             delete node;                     
                             Nodes.erase(Nodes.begin() + i);  
                             --i;                             

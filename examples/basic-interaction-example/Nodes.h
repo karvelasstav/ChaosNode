@@ -65,6 +65,8 @@ public:
     ImColor Color;
     NodeType Type = NodeType::Basic;
     ImVec2 Start_pos;
+
+
     Node(ed::NodeId ID, std::string Name, Pin* InputPin, std::vector<Pin*> OutputPins, ImVec2 Start_pos)
     {
         this->ID = ID;
@@ -80,7 +82,24 @@ public:
         }
 
     }
+    // Remove this node's pins from a global/shared pin list
+    void RemovePinsFrom(std::vector<Pin*>& allPins) const
+    {
+        auto erase_one = [&](Pin* p)
+            {
+                if (!p) return;
+                auto it = std::find(allPins.begin(), allPins.end(), p);
+                if (it != allPins.end())
+                    allPins.erase(it);
+            };
 
+        // remove input pin
+        erase_one(InputPin);
+
+        // remove all output pins
+        for (Pin* p : OutputPins)
+            erase_one(p);
+    }
     
 
     ~Node()
@@ -90,10 +109,7 @@ public:
         {
             delete pin;
         }
-        for (auto pin : OutputNode)
-        {
-            delete pin;
-        }
+
     }
 
 };
