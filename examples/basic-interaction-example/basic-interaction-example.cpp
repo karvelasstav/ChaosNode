@@ -4,6 +4,8 @@
 #include <vector>
 #include <fstream>
 #include <cctype>
+#include <unordered_set>
+#include <functional>
 #include "Nodes.h"
 
 namespace ed = ax::NodeEditor;
@@ -30,17 +32,19 @@ static bool StartsWithCaseInsensitive(const std::string& text, const std::string
 
 
 
-struct Example:
+struct Example :
     public Application
 {
     int uniqueId = 1;
-   
+
     std::vector<Node*> Nodes{};
     std::vector<LinkInfo*> Links{};
     std::vector<Pin*> Pins{};
 
     std::vector<function> funcs{};
+    std::string g_TextToParse = "";
 
+    std::vector<Node*> root_nodes{};
 
     // --- Quick node creation UI ("Shift + A") ---
     bool   m_ShowCreateNode = false;
@@ -50,6 +54,76 @@ struct Example:
     char   m_CreateNodeFilter[64] = { 0 };   // text filter (function name prefix)
     int    m_CreateNodeTypeFilter = 0;       // 0 = All, 1..N = specific PinType
 
+
+
+
+    const float LAYOUT_X_STEP = 220.0f;    // horizontal spacing between columns
+    const float LAYOUT_Y_STEP = 80.0f;     // vertical spacing between siblings
+    const float LAYOUT_ROOT_GAP = 120.0f;    // vertical gap between different root trees
+
+    // Recursively layout a subtree. Returns "height" in rows.
+    float LayoutSubtree(Node* node, int depth, float& yCursor,
+        std::unordered_set<Node*>& visited)
+    {
+        if (!node)
+            return 0.0f;
+
+        // Avoid infinite recursion on cycles
+        if (visited.count(node))
+            return 0.0f;
+        visited.insert(node);
+
+        // Gather real children (skip nulls)
+        std::vector<Node*> children;
+        children.reserve(node->OutputNodes.size());
+        for (Node* c : node->OutputNodes)
+            if (c)
+                children.push_back(c);
+
+        // Leaf node: just place it and advance y
+        if (children.empty())
+        {
+            node->Start_pos = ImVec2(depth * LAYOUT_X_STEP, yCursor);
+            yCursor += LAYOUT_Y_STEP;
+            return 1.0f;
+        }
+
+        // Internal node: first layout children, then place node in the vertical middle
+        float subtreeStartY = yCursor;
+        float totalRows = 0.0f;
+
+        for (Node* c : children)
+        {
+            totalRows += LayoutSubtree(c, depth + 1, yCursor, visited);
+        }
+
+        if (totalRows <= 0.0f)
+            totalRows = 1.0f; // safety
+
+        float centerY = subtreeStartY + (totalRows * LAYOUT_Y_STEP) * 0.5f;
+        node->Start_pos = ImVec2(depth * LAYOUT_X_STEP, centerY);
+
+        return totalRows;
+    }
+
+    // Layout all graphs starting from root_nodes
+    void AutoLayoutGraphs()
+    {
+        std::unordered_set<Node*> visited;
+        float rootY = 0.0f;
+
+        for (Node* root : root_nodes)
+        {
+            if (!root)
+                continue;
+
+            float yCursor = rootY;
+            float rows = LayoutSubtree(root, /*depth=*/0, yCursor, visited);
+
+            // Leave some gap before the next root tree
+            rootY = yCursor + LAYOUT_ROOT_GAP;
+        }
+    }
 
     Pin* MakePin(PinType type, PinKind kind)
     {
@@ -61,7 +135,7 @@ struct Example:
     Node* MakeBasicNode(const std::string& name,
         PinType inputType,
         std::initializer_list<PinType> outputTypes,
-        ImVec2 startPos)
+        ImVec2 startPos, std::string desc = "", NodeType nodetype = NodeType::Basic)
     {
         Pin* inputPin = MakePin(inputType, PinKind::Input);
 
@@ -70,9 +144,15 @@ struct Example:
         for (auto t : outputTypes)
             outputs.push_back(MakePin(t, PinKind::Output));
 
-        auto* node = new Node{ ed::NodeId(uniqueId++), name, inputPin, std::move(outputs), startPos };
-        Nodes.push_back(node);
+        auto* node = new Node{ ed::NodeId(uniqueId++), name, inputPin, std::move(outputs), startPos, desc,nodetype };
 
+        inputPin->NodePtr = node;
+        for (auto t : outputs)
+        {
+            t->NodePtr = node;
+        }
+        Nodes.push_back(node);
+        if (nodetype == NodeType::Primary) { root_nodes.push_back(node); }
         return node;
     }
 
@@ -153,7 +233,7 @@ struct Example:
 
         std::ifstream file("E:\\Steam stuff\\steamapps\\common\\Cube Chaos\\ModdingInfo.txt");
         if (!file.is_open())
-            return; 
+            return;
 
         std::string line;
         bool hasCategory = false;
@@ -276,7 +356,7 @@ struct Example:
                 else if (t == "CUBE" || t == "Cube")     pt = PinType::Cube;
                 else if (t == "DIRECTION" || t == "Direction")
                     pt = PinType::Direction;
-                else if (t == "DOUBLE" || t == "Double" ||
+                else if (t == "DOUBLE" || t == "Double" || t == "double"||
                     t == "TIME" || t == "Time" ||
                     t == "CONSTANT" || t == "Constant" ||
                     t == "STACKING" || t == "Stacking")
@@ -302,36 +382,81 @@ struct Example:
         }
     }
 
-
     void DrawNode(Node* node) const
     {
         if (m_FirstFrame)
             ed::SetNodePosition(node->ID, node->Start_pos);
 
         ed::BeginNode(node->ID);
-        ImGui::Text(node->Name.c_str());
 
-        // Left side: input
+        // Title
+        if (node->Type == NodeType::Constant)
+            ImGui::Text("Constant");
+        else
+            ImGui::Text("%s", node->Name.c_str());
+
+
+// Left side: input
         ImGui::BeginGroup();
         if (node->Type != NodeType::Primary && node->InputPin)
         {
             ed::BeginPin(node->InputPin->ID, ed::PinKind::Input);
-            ImGui::Text(ToString(node->InputPin->Type));
+            ImColor col = GetPinColor(node->InputPin->Type);
+            ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)col);
+            ImGui::Text("%s", ToString(node->InputPin->Type));
+            ImGui::PopStyleColor();
             ed::EndPin();
         }
         ImGui::EndGroup();
 
         ImGui::SameLine();
 
-        // Right side: outputs
-        ImGui::BeginGroup();
-        for (auto* out : node->OutputPins)
+
+
+       // Right side: outputs (none for constants)
+        if (node->Type != NodeType::Constant)
         {
-            ed::BeginPin(out->ID, ed::PinKind::Output);
-            ImGui::Text(ToString(out->Type));
-            ed::EndPin();
+            ImGui::BeginGroup();
+            for (auto* out : node->OutputPins)
+            {
+                ed::BeginPin(out->ID, ed::PinKind::Output);
+                ImColor col = GetPinColor(out->Type);
+                ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)col);
+                ImGui::Text("%s", ToString(out->Type));
+                ImGui::PopStyleColor();
+                ed::EndPin();
+            }
+            ImGui::EndGroup();
         }
-        ImGui::EndGroup();
+
+
+        // --- Constant value widget ---
+        if (node->Type == NodeType::Constant)
+        {
+            auto& io = ImGui::GetIO();
+            // Disable node editor shortcuts when typing (like the widget example)
+            ed::EnableShortcuts(!io.WantTextInput);
+
+            ImGui::Text("Value:");
+            ImGui::SameLine();
+
+            // Make a stable ID per node so multiple nodes can each have an InputText
+            ImGui::PushID(node);
+
+            // Use a small buffer; copy from node->Name
+            char buf[128];
+            std::snprintf(buf, sizeof(buf), "%s", node->Name.c_str());
+
+            ImGui::PushItemWidth(120.0f);
+            if (ImGui::InputText("##ConstName", buf, IM_ARRAYSIZE(buf)))
+            {
+                // Write the edited name back into the node
+                node->Name = buf;
+            }
+            ImGui::PopItemWidth();
+
+            ImGui::PopID();
+        }
 
         ed::EndNode();
     }
@@ -345,6 +470,350 @@ struct Example:
         }
     }
 
+
+
+    void ParseNodes(std::string& text)
+    {
+        // If there are no root nodes, just append the message and return
+        if (root_nodes.empty())
+        {
+            if (!text.empty() && text.back() != '\n')
+                text += '\n';
+
+            text += "a root node is needed";
+            return;
+        }
+
+        // For cycle detection and to avoid reprocessing nodes
+        std::unordered_set<Node*> visited;
+        std::unordered_set<Node*> recursionStack;
+
+        bool cycleDetected = false;
+
+        // Depth-first traversal
+        std::function<void(Node*)> dfs = [&](Node* node)
+            {
+                if (!node)
+                    return;
+
+                // Cycle detection: if the node is already in the current recursion stack
+                if (recursionStack.find(node) != recursionStack.end())
+                {
+                    cycleDetected = true;
+                    // Do not recurse further from this node to avoid infinite loop
+                    return;
+                }
+
+                // If we've already fully processed this node, skip it
+                if (visited.find(node) != visited.end())
+                    return;
+
+                visited.insert(node);
+                recursionStack.insert(node);
+
+                // Append this node's name on its own line
+                if (!text.empty() && text.back() != '\n')
+                    text += ' ';
+
+                text += node->Name;
+
+                // If this is a Constant node, treat it as a leaf and go back up
+                if (node->Type == NodeType::Constant )
+                {
+                    recursionStack.erase(node);
+                    return;
+                }
+
+                // Go down each output node in order (depth-first)
+                for (Node* out : node->OutputNodes)
+                {
+                    dfs(out);
+                }
+
+                // Done exploring this path
+                recursionStack.erase(node);
+            };
+
+        // Start DFS from each root node
+        for (Node* root : root_nodes)
+        {
+            dfs(root);
+            text += '\n';
+        }
+
+        // If a cycle was detected anywhere, note it at the end of the string
+        if (cycleDetected)
+        {
+            if (!text.empty() && text.back() != '\n')
+                text += '\n';
+
+            text += "cycle detected";
+        }
+    }
+    void ParseText(const std::string& text)
+    {
+        // 0) Clear existing graph
+        for (Node* n : Nodes)
+            delete n;
+        Nodes.clear();
+        Pins.clear();
+        m_Links.clear();
+        root_nodes.clear();
+
+        uniqueId = 1;
+        m_NextLinkId = 100;
+
+        // Helper: split string into lines
+        std::vector<std::string> lines;
+        {
+            std::string cur;
+            for (char c : text)
+            {
+                if (c == '\n')
+                {
+                    lines.push_back(cur);
+                    cur.clear();
+                }
+                else
+                    cur.push_back(c);
+            }
+            lines.push_back(cur);
+        }
+
+        // Trim helper
+        auto trim = [](std::string& s)
+            {
+                size_t b = 0;
+                while (b < s.size() && std::isspace((unsigned char)s[b])) ++b;
+                size_t e = s.size();
+                while (e > b && std::isspace((unsigned char)s[e - 1])) --e;
+                s = s.substr(b, e - b);
+            };
+
+        // Tokenize a line
+        auto tokenize = [](const std::string& s) -> std::vector<std::string>
+            {
+                std::vector<std::string> out;
+                std::string cur;
+                for (char c : s)
+                {
+                    if (std::isspace((unsigned char)c))
+                    {
+                        if (!cur.empty())
+                        {
+                            out.push_back(cur);
+                            cur.clear();
+                        }
+                    }
+                    else
+                        cur.push_back(c);
+                }
+                if (!cur.empty())
+                    out.push_back(cur);
+                return out;
+            };
+
+        // 1) Determine if we're in explicit-root mode
+        bool explicitRootMode = false;
+        for (auto l : lines)
+        {
+            trim(l);
+            if (l.empty()) continue;
+            auto toks = tokenize(l);
+            if (!toks.empty() && toks[0] == "Root")
+            {
+                explicitRootMode = true;
+                break;
+            }
+            else
+            {
+                // first non-empty line is not Root => implicit-root mode
+                explicitRootMode = false;
+                break;
+            }
+        }
+
+        // 2) Build graphs = vector< vector<string> >
+        std::vector<std::vector<std::string>> graphs;
+
+        if (!explicitRootMode)
+        {
+            // All text is one graph, newlines are just whitespace
+            std::vector<std::string> all;
+            for (auto l : lines)
+            {
+                trim(l);
+                if (l.empty()) continue;
+                auto toks = tokenize(l);
+                all.insert(all.end(), toks.begin(), toks.end());
+            }
+            if (!all.empty())
+                graphs.push_back(std::move(all));
+        }
+        else
+        {
+            // Explicit-root mode: each line starting with Root begins a new graph
+            std::vector<std::string> current;
+
+            for (auto l : lines)
+            {
+                trim(l);
+                if (l.empty()) continue;
+                auto toks = tokenize(l);
+                if (toks.empty()) continue;
+
+                if (toks[0] == "Root")
+                {
+                    // Start new graph
+                    if (!current.empty())
+                    {
+                        graphs.push_back(std::move(current));
+                        current.clear();
+                    }
+                    // Drop the "Root" token itself, rest belong to this graph
+                    for (size_t i = 1; i < toks.size(); ++i)
+                        current.push_back(toks[i]);
+                }
+                else
+                {
+                    // Continuation of current graph (ignore newline)
+                    for (auto& t : toks)
+                        current.push_back(t);
+                }
+            }
+
+            if (!current.empty())
+                graphs.push_back(std::move(current));
+        }
+
+        if (graphs.empty())
+            return;
+
+        // 3) Helper to find function by name
+        auto findFunc = [&](const std::string& name) -> const function*
+            {
+                for (const auto& f : funcs)
+                    if (f.Name == name)
+                        return &f;
+                return nullptr;
+            };
+
+        // 4) Recursive expression parser
+        std::function<Node* (const std::vector<std::string>&, size_t&, PinType)> ParseExpr =
+            [&](const std::vector<std::string>& toks, size_t& idx, PinType expected) -> Node*
+            {
+                if (idx >= toks.size())
+                {
+                    g_TextToParse += "\nerror: unexpected end of input while expecting ";
+                    g_TextToParse += ToString(expected);
+                    return nullptr;
+                }
+
+                const std::string& tok = toks[idx++];
+                const function* f = findFunc(tok);
+
+                if (f)
+                {
+                    // Check input type
+                    if (f->input != expected)
+                    {
+                        g_TextToParse += "\nerror: type mismatch at token '";
+                        g_TextToParse += tok;
+                        g_TextToParse += "': function expects ";
+                        g_TextToParse += ToString(f->input);
+                        g_TextToParse += " but parent needed ";
+                        g_TextToParse += ToString(expected);
+                        return nullptr;
+                    }
+
+                    Node* node = NodeFromFunciton(*f, ImVec2(0, 0));
+                    if (!node) return nullptr;
+
+                    for (int p = 0; p < f->output_size; ++p)
+                    {
+                        Node* child = ParseExpr(toks, idx, f->output[p]);
+                        if (!child)
+                            return node; // we already reported error; keep partial graph
+
+                        // Connect node -> child
+                        node->OutputNodes[p] = child;
+                        child->InputNode = node;
+
+                        // Create link (input side = child's InputPin, output side = node's OutputPins[p])
+                        m_Links.push_back({
+                            ed::LinkId(m_NextLinkId++),
+                            child->InputPin->ID,
+                            node->OutputPins[p]->ID
+                            });
+                    }
+
+                    return node;
+                }
+                else
+                {
+                    // Constant node
+                    Node* c = MakeBasicNode(tok, expected, {}, ImVec2(0, 0), "", NodeType::Constant);
+                    return c;
+                }
+            };
+
+        // 5) Parse each graph, create Primary Root
+        for (auto& g : graphs)
+        {
+            if (g.empty())
+                continue;
+
+            // Infer root output type from first token if possible
+            PinType rootOutputType = PinType::Trigger;
+            if (!g.empty())
+            {
+                if (const function* f0 = findFunc(g[0]))
+                    rootOutputType = f0->input;
+            }
+
+            // Create primary root node; MakeBasicNode will add it to root_nodes
+            Node* root = MakeBasicNode(
+                "Root",
+                PinType::Action,         // dummy input
+                { rootOutputType },      // one output
+                ImVec2(0, 0),
+                "",
+                NodeType::Primary
+            );
+
+            size_t idx = 0;
+            Node* child = ParseExpr(g, idx, rootOutputType);
+
+            if (child)
+            {
+                root->OutputNodes[0] = child;
+                child->InputNode = root;
+
+                m_Links.push_back({
+                    ed::LinkId(m_NextLinkId++),
+                    child->InputPin->ID,
+                    root->OutputPins[0]->ID
+                    });
+            }
+
+            if (idx < g.size())
+            {
+                g_TextToParse += "\nwarning: extra tokens at end of line starting with '";
+                g_TextToParse += g[0];
+                g_TextToParse += "'";
+            }
+        }
+
+        AutoLayoutGraphs();
+        ed::SetCurrentEditor(m_Context);
+        for (Node* n : Nodes)
+            ed::SetNodePosition(n->ID, n->Start_pos);
+    }
+
+
+
+
+
     using Application::Application;
 
     void OnStart() override
@@ -353,9 +822,6 @@ struct Example:
         config.SettingsFile = "BasicInteraction.json";
         m_Context = ed::CreateEditor(&config);
 
-        MakeBasicNode("DirectionFromPosToPos", PinType::Direction, { PinType::Position, PinType::Direction }, { 0,0 });
-        MakeBasicNode("hi", PinType::Direction, { PinType::Position, PinType::Direction }, { 0,0 });
-        MakeBasicNode("love!", PinType::Direction, { PinType::Position, PinType::Direction }, { 0,0 });
         ParseModInfo(funcs);
         ;
     }
@@ -390,36 +856,105 @@ struct Example:
 
         ImGui::Separator();
 
+        //window with textbox
+        {
+
+            // Separate "Text Parser" window with global string & buttons
+            ImGui::Begin("Text Parser");
+
+            
+            auto Clamp = [](float v, float lo, float hi)
+                {
+                    return (v < lo) ? lo : (v > hi) ? hi : v;
+                };
+
+
+            ImVec2 size = ImGui::GetWindowSize();
+
+            // Set your constraints
+            float fixedHeight = 360.0f;
+            float minWidth = 300.0f;
+            float maxWidth = 1500.0f;
+
+            // Clamp width, force height
+            size.x = Clamp(size.x, minWidth, maxWidth);
+            size.y = fixedHeight;
+
+            ImGui::SetWindowSize(size);
+
+
+            // Local editable buffer for ImGui (backed by the global string)
+            static char textBuf[80192]; //TODO: i know there is a way to use a string and dynamically resize it but the buffer should realistically be sufficient
+            static bool initialized = false;
+
+
+            std::snprintf(textBuf, sizeof(textBuf), "%s", g_TextToParse.c_str());
+            initialized = true;
+
+            // Multiline textbox
+            if (ImGui::InputTextMultiline(
+                "##GlobalText",
+                textBuf,
+                IM_ARRAYSIZE(textBuf),
+                ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16.0f),
+                ImGuiInputTextFlags_AllowTabInput))
+            {
+                // If user edited it, write back to the global string
+                g_TextToParse = textBuf;
+            }
+
+            // Buttons
+            if (ImGui::Button("Parse nodes"))
+            {
+                ParseNodes(g_TextToParse);
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Parse text"))
+            {
+                ParseText(g_TextToParse);
+            }
+
+            ImGui::End();
+        }
+
         ed::SetCurrentEditor(m_Context);
 
 
 
 
-        // ---------------------------------------------------------------------
-   // 1) Keyboard shortcut: Shift + A opens the "create node" search popup
-   // ---------------------------------------------------------------------
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+
+
+
+
+
+        // Keyboard shortcut: Shift + A opens the "create node" search popup
+
         {
-            // Don't trigger while another input is active
-            if (!ImGui::IsAnyItemActive() && !ImGui::IsAnyItemFocused())
+            if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
             {
-                // Map ImGuiKey_A -> index in io.KeysDown[]
-                int keyAIndex = ImGui::GetKeyIndex(ImGuiKey_A);
-
-                if (io.KeyShift && ImGui::IsKeyPressed(keyAIndex, false))
+                // Don't trigger while another input is active
+                if (!ImGui::IsAnyItemActive() && !ImGui::IsAnyItemFocused())
                 {
-                    m_ShowCreateNode = true;
-                    m_FocusCreateNodeSearch = true;
+                    // Map ImGuiKey_A -> index in io.KeysDown[]
+                    int keyAIndex = ImGui::GetKeyIndex(ImGuiKey_A);
 
-                    ImVec2 mouseScreen = ImGui::GetMousePos();
-                    
+                    if (io.KeyShift && ImGui::IsKeyPressed(keyAIndex, false))
+                    {
+                        m_ShowCreateNode = true;
+                        m_FocusCreateNodeSearch = true;
 
-                    m_CreateNodePopupPos = mouseScreen;
-                    m_CreateNodePosCanvas = ed::ScreenToCanvas(mouseScreen);
+                        ImVec2 mouseScreen = ImGui::GetMousePos();
 
 
-                    m_CreateNodeFilter[0] = '\0';
-                    m_CreateNodeTypeFilter = 0;
+                        m_CreateNodePopupPos = mouseScreen;
+                        m_CreateNodePosCanvas = ed::ScreenToCanvas(mouseScreen);
+
+
+                        m_CreateNodeFilter[0] = '\0';
+                        m_CreateNodeTypeFilter = 0;
+                    }
                 }
             }
         }
@@ -430,7 +965,22 @@ struct Example:
 
         // Submit Links
         for (auto& linkInfo : m_Links)
-            ed::Link(linkInfo.Id, linkInfo.InputId, linkInfo.OutputId);
+        {
+            Pin* outputPin = nullptr;
+            for (Pin* p : Pins)
+                if (p->ID == linkInfo.OutputId)
+                    outputPin = p;
+
+            ImVec4 color = GetPinColor(outputPin ? outputPin->Type : PinType::Trigger);
+
+            ed::Link(
+                linkInfo.Id,
+                linkInfo.InputId,
+                linkInfo.OutputId,
+                color,
+                2.0f  // thicker is nicer
+            );
+        }
 
         //
         // 2) Handle interactions
@@ -459,36 +1009,57 @@ struct Example:
 
                 Node* n1 = nullptr;
                 Node* n2 = nullptr; //check if same node input and output. 
-                    for (Pin* pin : Pins)
-                    {
-                        if (Aisinput && Bisinput) { break; }
+                ed::PinId actual_input_pin; //after following for loop stores the id of the actual input pin
 
-                        if (pin->ID == InputPinId)
-                        {
-                            n1 = pin->NodePtr;
-                            if (pin->Kind == PinKind::Input)
-                            {
-                                Aisinput = true;
-                            }
-                            
-                        }
-                        if (pin->ID == OutputPinId)
-                        {
-                            n2 = pin->NodePtr;
-                            if (pin->Kind == PinKind::Input)
-                            {
-                                Bisinput = true;
-                            }
-            
-                        }
-                    }
-                    
-
-                if (InputPinId && OutputPinId && (Aisinput ^ Bisinput)&&(n1!=n2)) // both are valid, let's accept link
+                PinType Atype;
+                PinType Btype;
+                for (Pin* pin : Pins)
                 {
+                    if (Aisinput && Bisinput) { break; }
+
+                    if (pin->ID == InputPinId)
+                    {
+                        Atype = pin->Type;
+                        n1 = pin->NodePtr;
+                        if (pin->Kind == PinKind::Input)
+                        {
+                            Aisinput = true;
+                            actual_input_pin = pin->ID;
+                        }
+
+                    }
+                    if (pin->ID == OutputPinId)
+                    {
+                        Btype = pin->Type;
+                        n2 = pin->NodePtr;
+                        if (pin->Kind == PinKind::Input)
+                        {
+                            Bisinput = true;
+                            actual_input_pin = pin->ID;
+                        }
+
+                    }
+                }
+
+
+                if (InputPinId && OutputPinId && (Aisinput ^ Bisinput) && (n1 != n2) && (Atype == Btype)) // both are valid, let's accept link
+                {
+
+                    Node* input_node; //node that has the input pin
+                    Node* output_node; //node that has the output pin
+                    if (Aisinput) { input_node = n1;  output_node = n2; }
+                    else { input_node = n2; output_node = n1; ed::PinId t = InputPinId; InputPinId = OutputPinId; OutputPinId = t; }
+
                     // ed::AcceptNewItem() return true when user release mouse button.
                     if (ed::AcceptNewItem())
                     {
+                        input_node->InputNode = output_node; //very spaghetti but should work
+                        for (size_t i = 0; i < output_node->OutputPins.size(); i++)
+                        {
+                            if (output_node->OutputPins[i]->ID == OutputPinId) {
+                                output_node->OutputNodes[i] = input_node;
+                            }
+                        }
                         // Since we accepted new link, lets add one to our list of links.
                         m_Links.push_back({ ed::LinkId(m_NextLinkId++), InputPinId, OutputPinId });
 
@@ -496,10 +1067,9 @@ struct Example:
                         ed::Link(m_Links.back().Id, m_Links.back().InputId, m_Links.back().OutputId);
                     }
 
-                    // You may choose to reject connection between these nodes
-                    // by calling ed::RejectNewItem(). This will allow editor to give
-                    // visual feedback by changing link thickness and color.
+
                 }
+                else { ed::RejectNewItem(); }
             }
         }
         ed::EndCreate(); // Wraps up object creation action handling.
@@ -508,23 +1078,7 @@ struct Example:
         // Handle deletion action
         if (ed::BeginDelete())
         {
-            ed::NodeId DeletedNode;
-            while (ed::QueryDeletedNode(&DeletedNode))   //delete a node
-            {
-                if (ed::AcceptDeletedItem())
-                {
-                    for (size_t i = 0; i < Nodes.size(); ++i) {
-                        Node* node = Nodes[i];
 
-                        if (node->ID == DeletedNode) {
-                            node->RemovePinsFrom(Pins);
-                            delete node;                     
-                            Nodes.erase(Nodes.begin() + i);  
-                            --i;                             
-                        }
-                    }
-                }
-            }
 
 
 
@@ -537,6 +1091,32 @@ struct Example:
                     {
                         if (link.Id == deletedLinkId)
                         {
+                            Pin* input_pin = nullptr;
+                            Pin* output_pin = nullptr;
+
+                            for (Pin* pin : Pins)
+                            {
+                                if (link.InputId == pin->ID) { input_pin = pin; }
+                                if (link.OutputId == pin->ID) { output_pin = pin; }
+                            }
+
+                           if(input_pin->Kind == PinKind::Output){ Pin* tmp = input_pin; input_pin = output_pin; output_pin = tmp; }
+
+                            if (output_pin)
+
+                            {
+                                output_pin->NodePtr->InputNode = nullptr;
+                            }
+
+                            if (input_pin)
+                            {
+                                for (size_t i = 0; i < input_pin->NodePtr->OutputNodes.size(); i++)
+                                {
+                                    if (input_pin->NodePtr->OutputPins[i]->ID == input_pin->ID) { input_pin->NodePtr->OutputNodes[i] = nullptr; }
+                                }
+                            }
+
+
                             m_Links.erase(&link);
                             break;
                         }
@@ -544,6 +1124,37 @@ struct Example:
                 }
 
             }
+       
+            ed::NodeId DeletedNode;
+            while (ed::QueryDeletedNode(&DeletedNode))   //delete a node
+            {
+                if (ed::AcceptDeletedItem())
+                {
+
+
+                    for (size_t i = 0; i < Nodes.size(); ++i) {
+                        Node* node = Nodes[i];
+
+                        if (node->ID == DeletedNode) {
+
+                            if (node->Type == NodeType::Primary)
+                            {
+                                for (size_t k = 0; k < root_nodes.size(); ++k)
+                                {
+                                    root_nodes.erase(root_nodes.begin() + k);
+                                }
+                            }
+
+                            node->RemovePinsFrom(Pins);
+                            delete node;
+                            Nodes.erase(Nodes.begin() + i);
+                            --i;
+                        }
+                    }
+                }
+            }
+        
+        
         }
         ed::EndDelete(); // Wrap up deletion action
 
@@ -553,14 +1164,43 @@ struct Example:
         ed::End();
 
 
+        if (auto hoveredId = ed::GetHoveredNode())
+        {
+            Node* hoveredNode = nullptr;
+            for (Node* n : Nodes)
+            {
+                if (n->ID == hoveredId)
+                {
+                    hoveredNode = n;
+                    break;
+                }
+            }
 
+            if (hoveredNode && !hoveredNode->description.empty())
+            {
+                ImGui::BeginTooltip();
+                ImGui::TextUnformatted(hoveredNode->Name.c_str());
+                ImGui::Separator();
+
+                // Fix: manually choose wrap width (e.g. 40 characters-ish)
+                float wrapWidth = ImGui::GetFontSize() * 40.0f;
+                ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + wrapWidth);
+                ImGui::TextUnformatted(hoveredNode->description.c_str());
+                ImGui::PopTextWrapPos();
+
+                ImGui::EndTooltip();
+            }
+        }
+
+
+
+        //search with shift+A
         if (m_ShowCreateNode)
         {
             // Position popup near where the user opened it
-            ImGui::SetNextWindowPos(m_CreateNodePopupPos, ImGuiCond_Always);
-
-            ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize
-                | ImGuiWindowFlags_NoSavedSettings
+            ImGui::SetNextWindowPos(m_CreateNodePopupPos, ImGuiCond_Appearing);
+            ImGui::SetNextWindowSize(ImVec2(450, 500), ImGuiCond_FirstUseEver);
+            ImGuiWindowFlags flags =  ImGuiWindowFlags_NoSavedSettings
                 | ImGuiWindowFlags_NoCollapse;
 
             if (ImGui::Begin("Create Node", &m_ShowCreateNode, flags))
@@ -623,6 +1263,92 @@ struct Example:
                     ImGui::EndCombo();
                 }
 
+
+                ImGui::Separator();
+                ImGui::Text("Quick create:");
+
+                // Constant type selection
+                static int s_ConstTypeIndex = 1; // index into typeLabels, 1..N (skip "All")
+                ImGui::Text("Constant of type:");
+                ImGui::SameLine();
+                if (ImGui::BeginCombo("##ConstType", typeLabels[s_ConstTypeIndex]))
+                {
+                    for (int i = 1; i < IM_ARRAYSIZE(typeLabels); ++i) // skip "All"
+                    {
+                        bool selected = (i == s_ConstTypeIndex);
+                        if (ImGui::Selectable(typeLabels[i], selected))
+                            s_ConstTypeIndex = i;
+                        if (selected)
+                            ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+
+                if (ImGui::Button("Create Constant"))
+                {
+                    // Map selection to PinType
+                    PinType chosenType = s_TypeOptions[s_ConstTypeIndex - 1];
+                    std::string nodeName = std::string("Constant");
+
+                    // 1 input (chosen type), no outputs, NodeType::Constant
+                    Node* constantNode = MakeBasicNode(
+                        nodeName,
+                        chosenType,
+                        {},
+                        m_CreateNodePosCanvas,
+                        "",
+                        NodeType::Constant
+                    );
+
+                    if (constantNode)
+                        ed::SetNodePosition(constantNode->ID, m_CreateNodePosCanvas);
+
+                    m_ShowCreateNode = false;
+                }
+
+                // Root type selection
+                static int s_RootTypeIndex = 1; // index into typeLabels, 1..N (skip "All")
+                ImGui::Text("Root of type:");
+                ImGui::SameLine();
+                if (ImGui::BeginCombo("##RootType", typeLabels[s_RootTypeIndex]))
+                {
+                    for (int i = 1; i < IM_ARRAYSIZE(typeLabels); ++i) // skip "All"
+                    {
+                        bool selected = (i == s_RootTypeIndex);
+                        if (ImGui::Selectable(typeLabels[i], selected))
+                            s_RootTypeIndex = i;
+                        if (selected)
+                            ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+
+                if (ImGui::Button("Create Root"))
+                {
+                    // Map selection to PinType
+                    PinType chosenType = s_TypeOptions[s_RootTypeIndex - 1];
+                    std::string nodeName = std::string("Root");
+
+                    // Use Action as dummy input type as requested.
+                    // NodeType::Primary hides the input pin in DrawNode.
+                    Node* rootNode = MakeBasicNode(
+                        nodeName,
+                        PinType::Action,           // dummy input type
+                        { chosenType },            // one output of chosen type
+                        m_CreateNodePosCanvas,
+                        "",
+                        NodeType::Primary
+                    );
+
+                    if (rootNode)
+                        ed::SetNodePosition(rootNode->ID, m_CreateNodePosCanvas);
+
+                    m_ShowCreateNode = false;
+                }
+
+                // -----------------------------------------------------------------
+                // Existing function search results
+                // -----------------------------------------------------------------
                 ImGui::Separator();
                 ImGui::Text("Results:");
 
@@ -632,11 +1358,10 @@ struct Example:
                     m_ShowCreateNode = false;
                 }
 
-                // List of matching functions inside a scrollable region
-                ImGui::BeginChild("##FunctionList", ImVec2(300.0f, 300.0f), true);
+                ImVec2 avail = ImGui::GetContentRegionAvail();
+                ImGui::BeginChild("##FunctionList", avail, true);
 
                 const std::string prefix = m_CreateNodeFilter;
-
                 for (std::size_t i = 0; i < funcs.size(); ++i)
                 {
                     const function& f = funcs[i];
@@ -653,14 +1378,42 @@ struct Example:
                     if (!prefix.empty() && !StartsWithCaseInsensitive(f.Name, prefix))
                         continue;
 
-                    if (ImGui::Selectable(f.Name.c_str()))
+                    ImGui::PushID(static_cast<int>(i));
+
+                    // Main selectable: function name
+                    bool clicked = ImGui::Selectable(f.Name.c_str());
+
+                    // Build inline signature: "InputType -> Out1, Out2" / "InputType -> void"
+                    std::string sig;
+                    sig += ToString(f.input);
+                    sig += " -> ";
+
+                    if (f.output_size <= 0)
+                    {
+                        sig += "void";
+                    }
+                    else
+                    {
+                        for (int oi = 0; oi < f.output_size; ++oi)
+                        {
+                            if (oi > 0)
+                                sig += ", ";
+                            sig += ToString(f.output[oi]);
+                        }
+                    }
+
+                    // Draw signature on same line, dimmer as secondary text
+                    ImGui::SameLine();
+                    ImGui::TextDisabled("%s", sig.c_str());
+
+                    ImGui::PopID();
+
+                    if (clicked)
                     {
                         // Create node at stored canvas position
                         Node* created = NodeFromFunciton(f, m_CreateNodePosCanvas);
                         if (created)
-                        {
                             ed::SetNodePosition(created->ID, m_CreateNodePosCanvas);
-                        }
 
                         m_ShowCreateNode = false;
                         break;
@@ -681,7 +1434,6 @@ struct Example:
 
 
 
-
         if (m_FirstFrame)
             ed::NavigateToContent(0.0f);
 
@@ -692,7 +1444,7 @@ struct Example:
         // ImGui::ShowMetricsWindow();
     }
 
-    ed::EditorContext*   m_Context = nullptr;    // Editor context, required to trace a editor state.
+    ed::EditorContext* m_Context = nullptr;    // Editor context, required to trace a editor state.
     bool                 m_FirstFrame = true;    // Flag set for first frame only, some action need to be executed once.
     ImVector<LinkInfo>   m_Links;                // List of live links. It is dynamic unless you want to create read-only view over nodes.
     int                  m_NextLinkId = 100;     // Counter to help generate link ids. In real application this will probably based on pointer to user data structure.

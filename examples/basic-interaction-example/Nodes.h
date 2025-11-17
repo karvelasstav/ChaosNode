@@ -27,6 +27,26 @@ inline const char* ToString(PinType type)
     }
     return "Unknown"; // safety
 }
+
+inline ImColor GetPinColor(PinType type)
+{
+    switch (type)
+    {
+    case PinType::Ability:   return ImColor(180, 80, 255);
+    case PinType::Action:    return ImColor(255, 180, 60);
+    case PinType::Boolean:   return ImColor(220, 48, 48);
+    case PinType::Cube:      return ImColor(68, 201, 156);
+    case PinType::Direction: return ImColor(147, 226, 74);
+    case PinType::Double:    return ImColor(51, 150, 215);
+    case PinType::Perk:      return ImColor(218, 0, 183);
+    case PinType::Position:  return ImColor(255, 255, 64);
+    case PinType::String:    return ImColor(124, 21, 153);
+    case PinType::Trigger:   return ImColor(255, 48, 48);
+    }
+    return ImColor(255, 255, 255);
+}
+
+
 class LinkInfo
 {public:
     ed::LinkId Id;
@@ -45,6 +65,7 @@ public:
     PinType     Type;
     PinKind     Kind;
 
+
     Pin(ed::PinId ID, PinType Type, PinKind Kind) {
         this->ID = ID;
         this->Type = Type;
@@ -61,20 +82,22 @@ public:
     Pin* InputPin;
     std::vector<Pin*> OutputPins;
     Node* InputNode = nullptr;
-    std::vector<Node*> OutputNode;
+    std::vector<Node*> OutputNodes;
     ImColor Color;
     NodeType Type = NodeType::Basic;
     ImVec2 Start_pos;
     
     std::string description = "";
 
-    Node(ed::NodeId ID, std::string Name, Pin* InputPin, std::vector<Pin*> OutputPins, ImVec2 Start_pos, std::string desc = "")
+    Node(ed::NodeId ID, std::string Name, Pin* InputPin, std::vector<Pin*> OutputPins, ImVec2 Start_pos, std::string desc = "", NodeType nodetype = NodeType::Basic)
     {
         this->ID = ID;
         this->Name = Name;
         this->InputPin = InputPin;
         this->OutputPins = OutputPins;
+        OutputNodes.resize(OutputPins.size(),nullptr);
         this->Start_pos = Start_pos;
+        this->Type = nodetype;
 
         this->InputPin->NodePtr = this;
         for (Pin* pin : this->OutputPins)
