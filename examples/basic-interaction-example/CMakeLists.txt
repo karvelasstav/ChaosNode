@@ -4,5 +4,5 @@ add_example_executable(CubeChaosNodeEditor
 
 # Optional – make the .exe name pretty
 set_target_properties(CubeChaosNodeEditor PROPERTIES
-    OUTPUT_NAME "CubeChaos Node Editor"
+    OUTPUT_NAME "ChaosNode"
 )
