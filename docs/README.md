@@ -42,15 +42,17 @@ Instead of typing everything by hand, you can:
 - **To build/edit graph manually**: Shift+A opens the Node Creation UI. from there you can select any function from ModInfo.txt that is in the directory of the .exe, Generate a constant of any type and create Root nodes that serve as entry points. Drag Input pins to Output pins to create links, starting from each root text is generated in orded using existing links.
 - **To parse nodes to text**: simply click the **"Parse nodes"** button. If you are copying this text in the program you **MUST** remove the starting Root for this is not a valid keyword the actual game understands but only this editor.
 
-##Common issues
+## Common issues
 - **ERROR: CANT READ ABILITY: (Root)**: You forgot to remove Root from the text written by the node editor. ROOT is used soley to tell the node editor from where to start the parsing of the graph, it is not a game command
 - **Shift + A Menu shows no functions**: "ModdingInfo.txt" was not in the .exe directory
 
 ## 📷 Screenshots
 
-> _Add actual screenshots or GIFs here once your repo is public._
+### Cascade.X
+![Cascade.X](https://github.com/karvelasstav/ChaosNode/blob/4adb317d635050a33666b21550c9adf782ccfe9f/docs/images/CascadeX.PNG)
 
-```text
-[ ChaosNode main editor screenshot ]
-[ Text parser window screenshot ]
-[ Create Node ("Shift + A") popup screenshot ]
+### Climbing
+![Climbing](https://github.com/karvelasstav/ChaosNode/blob/4adb317d635050a33666b21550c9adf782ccfe9f/docs/images/Climbing.PNG)
+
+### ScalingX
+![ScalingX](https://github.com/karvelasstav/ChaosNode/blob/4adb317d635050a33666b21550c9adf782ccfe9f/docs/images/ScalingX.PNG)
