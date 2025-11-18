@@ -1068,24 +1068,32 @@ struct Example :
                 }
 
 
+
+
                 if (InputPinId && OutputPinId && (Aisinput ^ Bisinput) && (n1 != n2) && (Atype == Btype)) // both are valid, let's accept link
                 {
+
+
 
                     Node* input_node; //node that has the input pin
                     Node* output_node; //node that has the output pin
                     if (Aisinput) { input_node = n1;  output_node = n2; }
                     else { input_node = n2; output_node = n1; ed::PinId t = InputPinId; InputPinId = OutputPinId; OutputPinId = t; }
 
+
                     // ed::AcceptNewItem() return true when user release mouse button.
                     if (ed::AcceptNewItem())
                     {
-                        input_node->InputNode = output_node; //very spaghetti but should work
+                       
                         for (size_t i = 0; i < output_node->OutputPins.size(); i++)
                         {
                             if (output_node->OutputPins[i]->ID == OutputPinId) {
+                                if (output_node->OutputNodes[i] != nullptr || input_node->InputNode != nullptr) { goto SkipCreation; }
                                 output_node->OutputNodes[i] = input_node;
                             }
                         }
+                        input_node->InputNode = output_node; //very spaghetti but should work
+
                         // Since we accepted new link, lets add one to our list of links.
                         m_Links.push_back({ ed::LinkId(m_NextLinkId++), InputPinId, OutputPinId });
 
@@ -1098,6 +1106,7 @@ struct Example :
                 else { ed::RejectNewItem(); }
             }
         }
+        SkipCreation:
         ed::EndCreate(); // Wraps up object creation action handling.
 
 
@@ -1111,44 +1120,53 @@ struct Example :
             ed::LinkId deletedLinkId;
             while (ed::QueryDeletedLink(&deletedLinkId))
             {
-                if (ed::AcceptDeletedItem())
+                if (!ed::AcceptDeletedItem())
+                    continue;
+
+                for (int i = 0; i < m_Links.size(); ++i)
                 {
-                    for (auto& link : m_Links)
+                    auto& link = m_Links[i];
+                    if (link.Id != deletedLinkId)
+                        continue;
+
+                    Pin* input_pin = nullptr;
+                    Pin* output_pin = nullptr;
+
+                    // Find the two pins
+                    for (Pin* pin : Pins)
                     {
-                        if (link.Id == deletedLinkId)
+                        if (link.InputId == pin->ID) input_pin = pin;
+                        if (link.OutputId == pin->ID) output_pin = pin;
+                    }
+
+                    // Make sure input_pin is actually an Input and output_pin an Output
+                    if (input_pin && input_pin->Kind == PinKind::Output)
+                        std::swap(input_pin, output_pin);
+
+                    Node* input_node = input_pin ? input_pin->NodePtr : nullptr;
+                    Node* output_node = output_pin ? output_pin->NodePtr : nullptr;
+
+                    // Clear the child's InputNode
+                    if (input_node)
+                        input_node->InputNode = nullptr;
+
+                    // Clear the parent's OutputNodes[] slot that corresponds to this output pin
+                    if (output_node && output_pin)
+                    {
+                        for (size_t j = 0; j < output_node->OutputPins.size(); ++j)
                         {
-                            Pin* input_pin = nullptr;
-                            Pin* output_pin = nullptr;
-
-                            for (Pin* pin : Pins)
+                            if (output_node->OutputPins[j]->ID == output_pin->ID)
                             {
-                                if (link.InputId == pin->ID) { input_pin = pin; }
-                                if (link.OutputId == pin->ID) { output_pin = pin; }
+                                output_node->OutputNodes[j] = nullptr;
+                                break;
                             }
-
-                           if(input_pin->Kind == PinKind::Output){ Pin* tmp = input_pin; input_pin = output_pin; output_pin = tmp; }
-
-                            if (output_pin)
-
-                            {
-                                output_pin->NodePtr->InputNode = nullptr;
-                            }
-
-                            if (input_pin)
-                            {
-                                for (size_t i = 0; i < input_pin->NodePtr->OutputNodes.size(); i++)
-                                {
-                                    if (input_pin->NodePtr->OutputPins[i]->ID == input_pin->ID) { input_pin->NodePtr->OutputNodes[i] = nullptr; }
-                                }
-                            }
-
-
-                            m_Links.erase(&link);
-                            break;
                         }
                     }
-                }
 
+                    // Remove link from list
+                    m_Links.erase(m_Links.begin() + i);
+                    break;
+                }
             }
        
             ed::NodeId DeletedNode;
