@@ -6,6 +6,7 @@
 #include <cctype>
 #include <unordered_set>
 #include <functional>
+#include <algorithm>
 #include "Nodes.h"
 
 namespace ed = ax::NodeEditor;
@@ -58,7 +59,7 @@ struct Example :
 
 
     const float LAYOUT_X_STEP = 220.0f;    // horizontal spacing between columns
-    const float LAYOUT_Y_STEP = 80.0f;     // vertical spacing between siblings
+    const float LAYOUT_Y_STEP = 100.0f;     // vertical spacing between siblings
     const float LAYOUT_ROOT_GAP = 120.0f;    // vertical gap between different root trees
 
     // Recursively layout a subtree. Returns "height" in rows.
@@ -350,25 +351,25 @@ struct Example :
                 PinType pt;
                 bool isType = true;
 
-                if (t == "Ability")                 pt = PinType::Ability;
-                else if (t == "Action")                  pt = PinType::Action;
-                else if (t == "Boolean")                 pt = PinType::Boolean;
-                else if (t == "CUBE" || t == "Cube")     pt = PinType::Cube;
-                else if (t == "DIRECTION" || t == "Direction")
-                    pt = PinType::Direction;
-                else if (t == "DOUBLE" || t == "Double" || t == "double"||
-                    t == "TIME" || t == "Time" ||
-                    t == "CONSTANT" || t == "Constant" ||
-                    t == "STACKING" || t == "Stacking")
+                std::string up = t;
+                std::transform(up.begin(), up.end(), up.begin(),
+                    [](unsigned char c) { return std::toupper(c); });
+
+
+
+                if (up == "ABILITY")                  pt = PinType::Ability;
+                else if (up == "ACTION")              pt = PinType::Action;
+                else if (up == "BOOLEAN")             pt = PinType::Boolean;
+                else if (up == "CUBE")                pt = PinType::Cube;
+                else if (up == "DIRECTION")           pt = PinType::Direction;
+                else if (up == "DOUBLE" || up == "TIME" ||
+                    up == "CONSTANT" || up == "STACKING")
                     pt = PinType::Double;
-                else if (t == "PERK" || t == "Perk")     pt = PinType::Perk;
-                else if (t == "POSITION" || t == "Position")
-                    pt = PinType::Position;
-                else if (t == "STRING" || t == "String" ||
-                    t == "WORD" || t == "Name" || t == "NAME")
+                else if (up == "PERK")                pt = PinType::Perk;
+                else if (up == "POSITION")            pt = PinType::Position;
+                else if (up == "STRING" || up == "WORD" || up == "NAME")
                     pt = PinType::String;
-                else if (t == "TRIGGER" || t == "Trigger")
-                    pt = PinType::Trigger;
+                else if (up == "TRIGGER")             pt = PinType::Trigger;
                 else
                     isType = false;
 

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(imgui-node-editor)
+# This is what Visual Studio will show as the solution name
+project("CubeChaos Node Editor")
 
 # Define IMGUI_NODE_EDITOR_ROOT_DIR pointing to project root directory
 get_filename_component(IMGUI_NODE_EDITOR_ROOT_DIR ${CMAKE_SOURCE_DIR}/.. ABSOLUTE CACHE)
@@ -127,8 +128,6 @@ endmacro()
 
 add_subdirectory(application)
 
-add_subdirectory(canvas-example)
-add_subdirectory(simple-example)
-add_subdirectory(widgets-example)
+
+# Keep only your game/example
 add_subdirectory(basic-interaction-example)
-add_subdirectory(blueprints-example)
