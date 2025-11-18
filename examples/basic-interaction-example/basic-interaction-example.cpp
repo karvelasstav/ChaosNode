@@ -58,8 +58,8 @@ struct Example :
 
 
 
-    const float LAYOUT_X_STEP = 220.0f;    // horizontal spacing between columns
-    const float LAYOUT_Y_STEP = 100.0f;     // vertical spacing between siblings
+    const float LAYOUT_X_STEP = 230.0f;    // horizontal spacing between columns
+    const float LAYOUT_Y_STEP = 90.0f;     // vertical spacing between siblings
     const float LAYOUT_ROOT_GAP = 120.0f;    // vertical gap between different root trees
 
     // Recursively layout a subtree. Returns "height" in rows.
@@ -232,7 +232,7 @@ struct Example :
     {
         dir.clear();
 
-        std::ifstream file("E:\\Steam stuff\\steamapps\\common\\Cube Chaos\\ModdingInfo.txt");
+        std::ifstream file("ModdingInfo.txt");
         if (!file.is_open())
             return;
 
@@ -690,14 +690,39 @@ struct Example :
         if (graphs.empty())
             return;
 
-        // 3) Helper to find function by name
-        auto findFunc = [&](const std::string& name) -> const function*
+
+//3)
+       // a) Any function with this name (used when we don't care about overloads)
+        auto findFuncAny = [&](const std::string& name) -> const function*
             {
                 for (const auto& f : funcs)
                     if (f.Name == name)
                         return &f;
                 return nullptr;
             };
+
+        // b) Overload-aware: pick function whose input matches `expected` if possible
+        auto findFunc = [&](const std::string& name, PinType expected) -> const function*
+            {
+                const function* fallback = nullptr;
+
+                for (const auto& f : funcs)
+                {
+                    if (f.Name != name)
+                        continue;
+
+                    // Perfect match: same name + same input type
+                    if (f.input == expected)
+                        return &f;
+
+                    // Remember the first function with that name as a fallback
+                    if (!fallback)
+                        fallback = &f;
+                }
+
+                return fallback; // may be nullptr if name not found, or "closest" one
+            };
+
 
         // 4) Recursive expression parser
         std::function<Node* (const std::vector<std::string>&, size_t&, PinType)> ParseExpr =
@@ -711,7 +736,7 @@ struct Example :
                 }
 
                 const std::string& tok = toks[idx++];
-                const function* f = findFunc(tok);
+                const function* f = findFunc(tok, expected);
 
                 if (f)
                 {
@@ -768,7 +793,7 @@ struct Example :
             PinType rootOutputType = PinType::Trigger;
             if (!g.empty())
             {
-                if (const function* f0 = findFunc(g[0]))
+                if (const function* f0 = findFuncAny(g[0]))
                     rootOutputType = f0->input;
             }
 

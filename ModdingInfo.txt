@@ -1,0 +1,760 @@
+Modding Info 
+
+Trigger: 
+AccelerateFirstAbility     "Every tick the first ability of this cube accelerates by 1 tick "
+Adaptable     "Adaptable: Before this gains an ability, except adaptable, lose this ability to gain the new ability an additional time "
+Addon     "\C178 0 255 Addon: \CN After a non \C178 0 255 Addon \CN ally is placed give it all other abilities of this, however this loses \C178 0 255 Addon \CN and dies "
+Advanced_Hovering     "\C109 209 228 Advanced Hovering: \CN Doesn't fall if 2 or 3 spaces above another cube "
+AfterACubeCollides Action
+AfterACubeCreationIsBlocked Action
+AfterACubeDies Action
+AfterACubeHeals Action
+AfterACubeIsCreated Action
+AfterACubeLosesAnAbility Action
+AfterACubeMoves Action
+AfterACubeTakesDamage Action
+AfterACubeTeleports Action
+AfterAMapIsGenerated Action
+AfterAnotherAllyIsCreated Action
+AfterBlockedTeleport Action
+AfterCampaignSomething Action
+AfterEndOfTheBattle Action
+AfterThisBlocksCreation Action
+AfterThisCollides Action
+AfterThisCreates Action
+AfterThisDealsDamage Action
+AfterThisDies Action
+AfterThisIsClicked Action
+AfterThisIsCreated Action
+AfterThisKills Action
+AfterThisMoves Action
+AfterThisMovesACube Action
+AfterThisTakesDamage Action
+AfterWorldSomething Action
+AfterYouClickAPerk Action
+AfterYouGainAPerk Action
+AfterYouGainOrLoseCurrency Action
+AfterYouLose Action
+AfterYouLoseAPerk Action
+AfterYouReroll Action
+AfterYouUpgradeAPerk Action
+AfterYouWin Action
+AiAggressiveBurrowing
+AiPlacement Action BOOLEAN
+AiPlacementAdd DOUBLE BOOLEAN
+AiPlacementRule BOOLEAN
+AiWarrior
+AlwaysNeutral     "AlwaysNeutral: This always turns neutral "
+AnyProjectileX CONSTANT     "\C250 150 150 AnyProjectile CODE 1 \B : \CN Before this collides with a cube, this dies and deals \C250 150 150 CODE 1 damage \CN to it "
+Arcing DOUBLE     "\C155 238 255 ARCING \CN VARIABLE ARCING "
+AreaBlast     "AreaBlast: Before this dies this deals 1 damage to every cube up to 2 spaces away "
+ArmorX STACKING     "\C128 128 128 Armor STACKING 1 \B : \CN Before this takes damage \C128 128 128 negate STACKING 1 \CN of that damage "
+Ascension BOOLEAN Action     "\C255 175 96 Ascension: \CN After this is created the first cube in your hand which CODE 1 CODE 2 "
+AtTheStartOfTheBattle Action
+BankedTimeX STACKING     "\C197 204 112 Banked Time \B : \CN Next tick remove this ability and accelerate for \C197 204 112 CODE 1 \CN ticks (1/60th of seconds) "
+BaseManaGen     "Every second generate 1 \CMANA mana \CN "
+BeesInsideX STACKING     "\C255 255 0 Bees Inside STACKING 1 \B : \CN After this dies create \C255 255 0 STACKING 1 \CN Bees on random left_side_position \B s (Bees are 2 damage homing projectiles) "
+BeforeACubeDies Action
+BeforeACubeGainsAnAbility Action
+BeforeACubeHeals Action
+BeforeACubeIsAddedToAHand Action
+BeforeACubeIsAddedToInventory Action
+BeforeACubeIsAddedToYourHand Action
+BeforeACubeMoves Action
+BeforeACubeMovesNegation Action
+BeforeACubeTakesDamage Action
+BeforeEndOfTheBattle Action
+BeforeManaIsGenerated Action
+BeforePercentChance Action
+BeforeThisAddsACubeToHand Action
+BeforeThisCollides Action
+BeforeThisDealsDamage Action
+BeforeThisDies Action
+BeforeThisGainsAnAbility Action
+BeforeThisHealsACube Action
+BeforeThisIsDrawn Action
+BeforeThisIsHealed Action
+BeforeThisIsPlaced Action
+BeforeThisMoves Action
+BeforeThisMovesNegation Action
+BeforeThisTakesDamage Action
+BeforeTime Action
+BeforeYouGainAPerk Action
+BeforeYouLose Action
+BeforeYouTakeAStep Action
+BeforeYouWin Action
+BetrayalX STACKING     "\C127 0 127 Betrayal STACKING 1 \B : \CN When this has less or exactly \C127 0 127 STACKING 1 \CN hp, lose this ability, convert to the enemy faction and gain Inspatial "
+BubbleX TIME     "\C0 254 255 Bubble CODE 1 \B : \CN Before this takes more than 0 damage negate that damage (reducing it to 0), cooldown \C0 254 255 CODE 1 \CN "
+Buoyant     "\C109 109 228 Buoyant: \CN Negate downwards movement if there is a cube below (Prevents collision effects, for example liquid) "
+Burning     "\C255 106 0 BURNING: \CN After 5 seconds deal 1 damage to every touching cube and this "
+Burrowed     "\C107 55 20 Burrowed: \CN Won't be attacked by \C255 0 0 Melee \CN from above "
+Burrowing     "\C128 128 128 Burrowing: \CN When there is a neutral cube below deal 20 damage to it, then replace this ability with \C107 55 20 Burrowed \CN "
+CascadeX CONSTANT     "\C0 127 127 Cascade CODE 1 \B : \CN After this dies create the first cube from your hand which costs at least \C0 127 127 CODE 1 less \CN than this "
+ChargeEveryX TIME     "\C155 238 255 Charging: \CN Every \C155 238 255 CODE 1 \CN move forwards "
+CheaperLaterX     "\C40 40 197 Cheaper Later STACKING 1 \B : \CN Reduce cost by \C40 40 197 STACKING 1 \CN and apply that much cheaper after placement and remove this ability "
+CheaperX     "\C40 40 197 Cheaper STACKING 1 \B : \CN Raise cost by \C40 40 197 STACKING 1 \CN after placement and remove this ability "
+Climbing     "Climbing: Before this is blocked from moving horizontally move upwards "
+Counter DOUBLE
+Crippling     "Crippling: After this deals damage the victim also loses that much maximum hp "
+DamagePassing     "\C150 125 0 DamagePassing: \CN Before this takes damage redirect it to the ally behind this, if there is one "
+DarkReturn     "\C38 38 38 Dark Return: \CN After this dies create a neutral Solid_Shadow here. Doesn't stack "
+DeadlyX STACKING     "Deadly STACKING 1 \B : Kill the next STACKING 1 non leader cubes this damages "
+Debt     "DEBT: When there is no more debt exile this "
+DecayX STACKING     "\C0 255 144 Decay STACKING 1 \B : \CN Lose 1 hp \C0 255 144 STACKING 1 \CN times per minute, stops at 1 or less hp "
+DevouringX CONSTANT     "\C0 78 0 Devouring CODE 1 \B : \CN After this kills a cube gain \C0 78 0 CODE 1 \CN extra hp "
+DiagonalAnchor     "Can only move down if the positions diagonally below are also empty "
+DiagonalUpgrade     "After this is created lose this ability and replicate to the position diagonally above and behind and diagonally below and infront (2 copies) "
+DieAfterX TIME     "\C200 200 200 Temporary: \CN This dies after CODE 1 "
+DisplacedUpgradeCreation     "After this is created teleport to a random position, Inheritable "
+DiveEnemiesX TIME     "\C255 0 0 Dive Attack: \CN Every CODE 1 \B , if the first cube any distance below is an enemy, move downwards and this can only move downwards while the enemy is there "
+DoubleTimeX STACKING     "\C197 204 112 Double Time \B : \CN Experience time twice as fast for \C197 204 112 STACKING 1 \CN second(s) "
+DoublingUpgrade     "After this is created lose this ability and replicate upwards "
+Dragon_Egg CUBE     "After 4 minutes kill this and add CODE 1 to your hand "
+Eldritch     "\C178 0 255 Eldritch: \CN After this dies a random allied leader takes damage and loses max hp equal to this cubes max hp "
+ElementalFriend STRING     "\C255 0 220 ElementalFriend: \CN After this dies create a CODE 1 from your inventory here, except its allied to the player "
+Enchantment Action     "\C178 0 255 Enchantment: \CN Apply the following to the cube below, if it isn't a leader: CODE 1 "
+EnergyGenerationX     "\C255 255 0 EnergyGeneration: \CN Every minute gain \C255 255 0 STACKING 1 energy \CN "
+EnergyX STACKING     "\C255 255 0 Energy: STACKING 1 \CN "
+Eternal     "\C128 128 128 Eternal: \CN After this is created give 5 extra hp to every cube in your hand with the same name "
+Every10Minutes Action
+Every10Seconds Action
+Every10Ticks Action
+Every20Seconds Action
+Every2Seconds Action
+Every30Seconds Action
+Every30Ticks Action
+Every3Seconds Action
+Every5Seconds Action
+Every5Ticks Action
+EveryHandTick Action
+EveryMinute Action
+EverySecond Action
+EveryTick Action
+EveryXAcidicY TIME CONSTANT     "\C155 55 134 Acidic: \CN Every \C155 55 134 CODE 1 \CN deal \C155 55 134 CODE 2 damage \CN to all touching cubes with different names "
+EveryXAddFreeCubeToHand TIME CUBE     "Every CODE 1 add a free copy of CODE 2 to your hand "
+EveryXCreateCube2Above DOUBLE CUBE     "Every CODE 1 create CODE 2 2 spaces above "
+EveryXCreateCubeAbove DOUBLE CUBE     "Every CODE 1 create CODE 2 above "
+EveryXCreateCubeInfront DOUBLE CUBE     "Every CODE 1 create CODE 2 in front "
+EveryXMeleeY TIME CONSTANT     "\C255 0 0 Melee: \CN Every \C255 0 0 CODE 1 \CN deal \C255 0 0 CODE 2 damage \CN to every touching enemy and neutral "
+EveryXMinutes DOUBLE Action
+EveryXSeconds DOUBLE Action
+EveryXTicks DOUBLE Action
+EvolveMoil Action     "After this is created Evolve_Moil in your hand gain: \N CODE 1 \N then remove all mutations from your hand and exile this "
+ExplodesX CONSTANT     "\C182 0 0 Explodes CODE 1 \B : \CN Before this dies deal \C182 0 0 CODE 1 damage \CN to touching cubes "
+ExtraLife     "\C255 255 0 ExtraLife: \CN After this dies lose this ability and create a full hp copy of this here "
+EyeXY DOUBLE DOUBLE     "\C255 0 0 Eye: \CN Every \C255 0 0 CODE 1 \CN deal \C255 0 0 CODE 2 damage \CN to a random enemy "
+FervorX STACKING     "\C255 38 0 Fervor STACKING 1 \B : \CN Before this deals damage deal \C255 38 0 STACKING 1 more \CN then remove this ability "
+FleeEveryX TIME     "\C155 238 255 Fleeing: \CN Every \C155 238 255 CODE 1 \CN move backwards "
+Flying     "\C109 209 228 Flying \CN "
+FoodX STACKING     "Food: STACKING 1 "
+Formless     "Formless: After this blocks a differently named ally's creation (not placement), remove this ability and replace this with a combination "
+Fragile     "\C160 130 100 Fragile \B : \CN After a cube collides into this, or this blocks a cubes creation, kill this "
+FreePlacement     "\C155 238 255 FreePlacement \CN "
+FreeUpgrade     "\C128 128 128 FreeUpgrade: \CN Must be placed above a non leader ally. After this is created exile that ally and this cube and create a combination below except the combination doesn't have this ability "
+FrozenX STACKING     "\C186 226 255 Frozen: \CN Unaffected by time for \C186 226 255 STACKING 1 seconds \CN "
+GhostDeath     "After this dies create a ghost here (removed after 1 second) "
+GiveWay     "When there is an ally with charging behind this, this dies "
+Golden     "\C255 238 0 Golden "
+Gravity     "Every 4 ticks move all cubes in gravity direction "
+GrowingUp CONSTANT CUBE     "When this has more than CODE 1 max hp, replace this with CODE 2 "
+GrowthX STACKING     "\C0 127 14 Growth STACKING 1 \B : \CN Gain 1 extra hp \C0 127 14 STACKING 1 \CN times per minute "
+HandTime     "Experiences time while in hand "
+Hanging     "Hanging: Can't move downwards while there is a cube above "
+Hat     "After a cube moves from the space below, move in the same direction "
+HolyX STACKING     "\C0 254 33 Holy STACKING 1 \B : \CN Heals for \C0 254 33 STACKING 1 \CN more when healed "
+HomingX TIME     "\C155 238 255 Homing: \CN Every \C155 238 255 CODE 1 \CN move towards the position of an enemy, retargets if that position no longer contains an enemy "
+HordeUpgrade     "After this is created lose this ability and replicate in all 4 directions "
+HorizontalHomingX TIME     "\C155 238 255 Homing: \CN Move forwards or backwards towards the position of an enemy every \C155 238 255 CODE 1 \CN \B , retargets if that position no longer contains an enemy or after colliding "
+HorizontalStability     "Connected: Can't move down as long as there is a cube below a horizontal neighbor, or a neighbors neighbor and so on "
+Hovering     "\C109 209 228 Hovering: \CN Doesn't fall if 2 spaces above another cube "
+InfestedX STACKING     "\C76 255 0 Infested STACKING 1 \B : \CN After this dies create the first \C255 0 220 swarm \CN cube from the players hand with cost \C76 255 0 STACKING 1 \CN or less (won't choose cube with same name) "
+Inheritable
+Inspatial     "Inspatial: The space behind this is adjacent to the space in front of this, updates after this moves, dies or teleports "
+JumpUpgradeCreation     "After this is created jump moving upwards and then downwards in an arc, Inheritable (no forwards or backwards) "
+JumpXY DOUBLE STACKING     "\C155 238 255 JUMPING \CN STACKING 1 "
+KeepAltitudeX TIME     "Every CODE 1 move up or down towards the row this was created in "
+Knockback     "Knockback: After this damages a cube also move it away. Inheritable "
+LaserXY CONSTANT CONSTANT Action     "\C255 0 0 Laser: \CN Every tick the cube CODE 1 infront and CODE 2 below will CODE 3 and this silently dies, if empty silently replicate in that direction instead "
+LEADER     "\C255 0 220 LEADER: \CN Players without a leader lose the battle "
+LifeDebtX STACKING     "LifeDebt: After this is placed an allied leader loses STACKING 1 hp "
+LifeSteal     "\C255 38 0 LifeSteal: \CN This heals for half the damage it deals "
+LiquidX TIME     "\C0 132 255 Liquid: \CN Move sideways randomly every \C0 132 255 CODE 1 \CN \B . Non liquids colliding with this swap position instead "
+ManaCharged     "\C0 38 255 Mana\C255 255 0 Charged: \CN After an ally is created above, exile it and gain energy equal to its manacost "
+ManaGenX STACKING     "\C0 38 255 Managen STACKING 1 \B : \CN Generate 1 mana \C0 38 255 STACKING 1 \CN times per minute "
+ManaStorageX CONSTANT     "\CMANA ManaStorage CODE 1 \B : \CN After this is created gain \CMANA CODE 1 max mana \CN \B , after this dies lose that much "
+Manifold     "\C255 0 220 Manifold: \CN Can't gain abilities via manifold again "
+MapGenerationTPEB Action Action Action Action
+MiseryX CONSTANT     "\C0 0 150 Misery CODE 1 \B : \CN After this deals damage to a cube additionally deal \C0 0 150 CODE 1 damage \CN to every enemy with the same name "
+MovementTrail CUBE     "After this moves a cube create CODE 1 in the previous position, it dies after 10 seconds "
+MutatingHealing DOUBLE CUBE     "Before this heals a cube with less than 5 abilities, every CODE 1 times, grant it all abilities of CODE 2 \B , Inheritable "
+Neutral     "\C255 255 0 Neutral: \CN After this is created turn neutral and lose this ability "
+NormalWinLoss     "EveryTick if you have no leader lose, if player 2 has no leader but you have one you win "
+Nothing
+OnDeathCreateCube CUBE     "After this dies create CODE 1 "
+Phasing     "\C255 0 220 Phasing: \CN When there is a single ally in front teleport across it "
+PhysicsUpgrade     "After this moves a cube into cube (collides) move that cube in the same direction, Inheritable "
+PoisonousX     "\C0 255 144 Poisonous STACKING 1 \B : \CN Apply \C0 255 144 STACKING 1 poison \CN to non allies this damages "
+PoisonX STACKING     "\C0 255 144 Poison STACKING 1 \B : \CN Lose 1 hp \C0 255 144 STACKING 1 \CN times per minute "
+PowderMovement     "Powder: Before this moves in a blocked direction randomly teleport diagonally in that direction "
+ProductConversionToCubeAfterX CUBE     "After this creates a cube which isn't CODE 1 exile it, then every time the manacost of the exiled cubes add up to CODE 1 create CODE 1 in its place "
+Projectile     "\C250 200 200 Projectile \B : \CN After this collides with a non ally this dies "
+ProjectileX CONSTANT     "\C250 150 150 Projectile CODE 1 \B : \CN After this collides with a non ally, this dies and deals \C250 150 150 CODE 1 damage \CN to it "
+Quantum     "After this dies, teleports or moves reset all adjacency at the previous position "
+RandomBonus     "After this is created exchange this ability with a random bonus "
+RandomMovementX TIME     "Every CODE 1 move in a random direction "
+RegeneratingUsesX STACKING     "\C100 100 220 Limited: \CN VARIABLE LIMITEDUSES uses left, gain 1 use per STACKING 1 minutes elapsed that battle "
+RegenerationX STACKING     "\C76 255 0 Regeneration STACKING 1 \B : \CN Heal 1 hp \C76 255 0 STACKING 1 \CN times per minute "
+ReplicrabUpgradeX CONSTANT     "After this kills an enemy CODE 1 \B % chance to create a copy of this in its place "
+ResetManaCostOnce     "After this is created reset the manacost of this and remove this ability "
+RetaliateX CONSTANT     "\C198 27 33 Retaliate CODE 1 \B : \CN After a non ally damages this deal \C198 27 33 CODE 1 damage \CN back "
+Returning     "Returning: After this dies add a healed copy of this to your hand "
+ReturningZap STACKING     "\C255 255 0 Infini Zap STACKING 1 \B : \CN Gain \C255 255 0 ZAP STACKING 1 \CN times per minute if without \C255 255 0 ZAP \CN "
+RibbonFlowerUpgrade TIME CUBE     "Every CODE 1 move upwards and randomly either create Plant_Stem or CODE 2 below "
+RoamingX TIME     "Every CODE 1 move forwards, turn around if there's no space "
+RobotHeartX STACKING     "RobotHeart STACKING 1 \B : Every second set robotpart to STACKING 1 "
+RobotMovement     "\C109 209 228 RobotMovement: \CN Before this moves in a direction, checks if every robotpart has space or another robotpart in that direction, if so move all robot parts in that direction instead and give all robot parts 1 second of double_time "
+RobotPartX     "RobotPart STACKING 1 \B : Can't move except via robot_core. Every second set this to 1 less than highest robotpart among touching cubes and this, dies if at 0 "
+ScalingX STACKING     "\C50 50 205 Scaling STACKING 1 \B : \CN After this is created cubes with the same name in your hand cost \C50 50 205 STACKING 1 more \CN "
+Shadow     "\C61 61 61 Shadow: \CN After this damages a cube without \C191 87 87 Vengeance \CN it now creates a Solid_Shadow on death. Inheritable "
+ShowCERTAINTY     "Stored Certainty: VARIABLE CERTAINTY % "
+SilentDieAfterX TIME     "This dies after CODE 1 without triggering anything "
+Slowed CONSTANT     "\C0 74 127 Slowed CODE 1 \B : CODE 1 \B % \CN chance to not experience time "
+SongConversion     "After this is placed exile this, for every differently named ally, 15% chance to create a copy of this above the ally "
+SoulThiefUpgrade     "The first time this damages an enemy lose this ability and copy a random ability of that enemy, Inheritable "
+SplinterX STACKING     "\C197 204 112 Splinter STACKING 1 \B : \CN Next damage taken is increased by \C197 204 112 STACKING 1 \CN then remove this ability "
+Stable     "Stable: Before this dies to itself, it doesn't instead "
+Starcurse     "\C0 0 150 Starcurse \CN Every 1 to 2 seconds create a 0.1 damage enemy projectile at the top of the map above this, flying towards this "
+StrengthX STACKING     "\C255 38 0 Strength STACKING 1 \B : \CN This deals \C255 38 0 STACKING 1 \CN more damage "
+Summoning_Circle_Combine     "Every 10 seconds, if there are 4 touching non leader allies, lose this ability and exile them and this to create a combination of all of those cubes "
+SurpriseMechanicUpgrade CUBE     "After this is created lose this ability, then 50% chance to replace this with CODE 1 "
+Swarm     "\C255 0 220 Swarm: \CN Can be created by infested cubes "
+Synchronized     "\C186 226 255 Synchronized: \CN Unaffected by time until a full second (then loses this ability) "
+TemporaryDoubleTime TIME     "\C197 204 112 Temporary Double Time \B : \CN Experience time twice as fast for \C197 204 112 CODE 1 \CN "
+TemporaryFlying     "\C109 209 228 Temporary Flying \B : \CN This has flying for \C109 209 228 CODE 1 \CN "
+TemporaryStrength CONSTANT     "\C255 38 0 Temporary Strength CODE 1 \B : \CN This deals \C255 38 0 CODE 1 \CN more damage for \C255 38 0 CODE 2 \CN "
+TemporaryUnmovable     "Can't move, remove this ability after CODE 1 "
+ThrummingX CONSTANT     "\C200 150 150 Thrumming CODE 1 \B : \CN Every 3rd time this takes damage, deal \C250 150 150 CODE 1 damage \CN to the first manacost 10 or greater enemy any distance infront "
+TimeShift POSITION     "\C197 204 112 TimeShift: \CN Every second accelerate the cube on X by 1 second "
+TransformX TIME CUBE     "After CODE 1 replace this with CODE 2 "
+Undead     "\C0 50 0 Undead: \CN Heals for 1 less when healed "
+UnfoldingX STACKING     "\C109 209 228 Unfolding STACKING 1 \B : \CN After this moves create a copy of this in the previous position if empty, except the copy does not have unfolding, \C109 209 228 STACKING 1 \CN creations left "
+Unique     "Unique: After this is placed exile all other non leader allies with the same name and lose this ability "
+Unmovable     "Can't move "
+Unplaceable     "\C155 238 255 Unplaceable \CN "
+Upgrade     "\C128 128 128 Upgrade: \CN Must be placed above an ally or neutral cube. After this is created lose \CMANA mana \CN equal to that cubes cost, then exile that cube and this cube and create a combination below except the combination doesn't have this ability "
+UpToXEfficiency CONSTANT     "\C0 0 255 Efficiency CODE 1 \B : \CN After this is created cubes with the same name in your hand cost 1 less, minimum cost \C0 0 255 CODE 1 \CN "
+VengeanceX CONSTANT     "\C191 87 87 Vengeance CODE 1 \B : \CN Before this dies deal \C191 87 87 CODE 1 damage \CN to the cube which killed this "
+VotikiumUpgrade     "After this dies create a Votikium_Upgrade_Core above a random ally which has space, it creates CSVARIABLE Votikium_Upgrade from your inventory after 4 minutes, it has 1 hp per 5 manacost of that cube (min 1) "
+WaterX STACKING     "Water: STACKING 1 "
+WhenYouGainThis Action
+WorthXMore STACKING     "After this is created increase manacost by STACKING 1 "
+Zap     "\C255 255 0 ZAP: \CN After a second deal 1 damage to another random ally within range of 7 spaces and lose this ability "
+
+Action: 
+EveryXTimes DOUBLE Action
+Both Action Action
+If BOOLEAN Action
+TargetCube CUBE Action
+EveryCubeWhich BOOLEAN Action
+EveryCubeInHandOfFactionWhich DOUBLE BOOLEAN Action
+XShots DOUBLE Action
+XTimes DOUBLE Action
+SecretXTimes DOUBLE Action
+IfElse BOOLEAN Action Action
+XDelay DOUBLE Action
+Randomly Action Action
+Silent Action
+Secret Action
+Until BOOLEAN Action Action
+SetCaster CUBE Action
+SetStorage CUBE Action
+EveryCubeTouchingPosition POSITION Action
+TargetPerk PERK Action
+TargetAbility ABILITY Action
+EveryPerkInInventoryWhich BOOLEAN Action
+EveryCubeInInventoryWhich BOOLEAN Action
+Cooldown DOUBLE Action
+EveryXTimesSteady DOUBLE Action
+SeperateEffect Action
+EveryXAmount DOUBLE Action
+XFeedY DOUBLE DOUBLE Action
+EveryMapNodeWhich BOOLEAN Action
+RandomlyX List
+SeperateEventAmount Action
+EveryAbilityOfCubeWhich CUBE BOOLEAN Action
+EveryCubeWhichInDirectionalOrder BOOLEAN DIRECTION Action
+EveryLeaderAbilityOfPerkWhich PERK BOOLEAN Action
+EveryWorldAbilityOfPerkWhich PERK BOOLEAN Action
+TakeXDamage DOUBLE
+TakeXDamageEffect DOUBLE int String
+ChangeMaxHp DOUBLE
+ChangeHp DOUBLE
+HealXDamage DOUBLE
+GainAbility ABILITY
+FactionXGainsYMana DOUBLE DOUBLE
+GenericAction
+SetFaction DOUBLE
+MoveInDirection DIRECTION
+NegateX DOUBLE
+CreateCubeOnPosition CUBE POSITION
+AddCubeToHandOfFaction CUBE DOUBLE
+AddCubeToHandOfFactionInfinitly CUBE DOUBLE
+ChangeMaxManaOfFaction DOUBLE DOUBLE
+CreateParticlesWithColourOnPosition DOUBLE POSITION
+CreateAoEParticlesColourRadiusPosition DOUBLE DOUBLE POSITION
+Die
+ChangeManaCost DOUBLE
+TeleportToPosition POSITION
+SwapWithPosition POSITION
+Nothing
+Exile
+SetVariable String DOUBLE
+SetSVariable String STRING
+ChangeVariable String DOUBLE
+AccelerateX DOUBLE
+SetPositionPlacability POSITION DOUBLE
+GainAbilityText ABILITY List
+SetHandSizeOfFaction DOUBLE DOUBLE
+RemoveCubeFromHandOfFaction CUBE DOUBLE
+ChangeIncomingAdjacency POSITION DIRECTION POSITION
+NewAdjacency POSITION DIRECTION POSITION
+ResetAdjacency
+RemoveRow DOUBLE
+RemoveColumn DOUBLE
+AddRow DOUBLE
+AddColumn DOUBLE
+FactionPlacesCubeOnPosition DOUBLE CUBE POSITION
+ChangeWorldTime DOUBLE
+ChangeAbilityStacking String DOUBLE
+GainObtainAction Action
+AddPerkAbility ABILITY
+RemoveAbility ABILITY
+SetAbilityStacking ABILITY DOUBLE
+SetAbilityPerkConnection ABILITY DOUBLE
+ConvertPerkAbilityDescription ABILITY
+SetAbilityText ABILITY STRING
+AccelerateAbilityByX ABILITY DOUBLE
+CreateNumberParticleWithColourOnPosition DOUBLE DOUBLE POSITION
+ChangeDelayOfSlotXOfFactionY DOUBLE DOUBLE DOUBLE
+GenerateAiCubeSetup DOUBLE
+AddCubeToInventory CUBE
+RemoveCubeFromInventory CUBE
+AddCubeToDeck CUBE
+Win
+WinCampaign
+Lose
+ReadAScenario String
+ReadARandomEvent
+GrantXP DOUBLE
+EndCampaign
+LoseALife
+GainALife
+ChangeCampaignVariable String DOUBLE
+SetCampaignVariable String DOUBLE
+SetCampaignSVariable STRING STRING
+ObtainPerk PERK
+LosePerk PERK
+LockPerk PERK
+UnlockPerk PERK
+ChangeDeckSize DOUBLE
+FlipSprite BOOLEAN
+SystemTime
+SetScore DOUBLE
+SetName STRING
+SetScoringScenario String
+Banish
+BanishPerk PERK
+PlaySound String
+TriggerCampaignSomething String
+TeleportToMapNode DOUBLE
+LoadMapNode DOUBLE
+AddPathAB DOUBLE DOUBLE
+RemoveCubeFromDeck CUBE
+SetMapNodeScenario DOUBLE String
+SetMapNodeDifficulty DOUBLE DOUBLE
+CreateGhost
+SetSpriteToCube CUBE
+SetSpriteToPerk PERK
+ClickPerk PERK
+DisablePerkAutoSort
+ReadAPartialScenario String
+TriggerWorldSomething String
+AddCubeSpriteAtXYSizeZ CUBE DOUBLE DOUBLE DOUBLE
+PrintDouble DOUBLE
+TriggerAbility ABILITY
+RemoveCubeFromInventoryWithScreen CUBE
+LosePerkWithScreen PERK
+ShowPlacementLine
+SetMapNodeExtraModifier DOUBLE PERK
+SpecialPerkAction PERK
+SetRequirementCube CUBE
+SetLimited BOOLEAN
+ChangeUsesAmount DOUBLE
+SetVariableOnCube String CUBE DOUBLE
+AddCubeToInventoryWithScreen CUBE
+ObtainPerkWithScreen PERK
+1Shot Action
+Then Action
+UntilSuccess Action
+GenerateXMana DOUBLE
+AddCubeToHandOfThis CUBE
+SetHp DOUBLE
+EveryCube Action
+GainXExtraHp DOUBLE
+ChangeCurrency DOUBLE
+ChangeRerollCost DOUBLE
+ChangeStartingMana DOUBLE
+ChangeStartingMaxMana DOUBLE
+ChangeDifficulty DOUBLE
+ChangeStartingHandSize DOUBLE
+GainAffectedAbility
+GainThisAbility
+GainAllAbilitiesOfCube CUBE
+GainAllAbilitiesOfPerk PERK
+GainAllWorldAbilitiesOfPerk PERK
+GainRandomAbilityOfCube CUBE
+GainRandomGeneratedAbility
+GainAbilityStacking ABILITY DOUBLE
+GainNthAbilityOfCube DOUBLE CUBE
+SetAbilitiesPerkConnection DOUBLE
+RemoveThisAbility
+RemoveAllAbilities
+RemoveRandomAbility
+RemoveAbilityWithName WORD
+EveryLeaderOfFaction DOUBLE Action
+EveryAlliedLeader Action
+EveryAlly Action
+RefundX DOUBLE
+NoManaCost
+EveryCubeInRadiusXAroundTarget DOUBLE Action
+ResetManaCost
+AddDepthRow CUBE
+LoseThisPerk
+EnergyNegation
+ResetAdjacencyAtTarget
+GainARandomBonus
+GainInspatial
+TriggerTargetFragment
+TriggerEffectFragment
+GetLeastFragment
+ElementalBury
+SufferXWounds CONSTANT
+TargetUpgradeCubes Action
+FindTargetUpgradeCubes Action
+ThisPerksAction
+GainRegeneratingUsesX DOUBLE
+
+BOOLEAN: 
+IsEnemyToCaster CUBE
+IsAllyToCaster CUBE
+And BOOLEAN BOOLEAN
+HasAbilityWithName CUBE String
+IsToken CUBE
+CubeExists CUBE
+HasLimitedUses CUBE
+IsSameCube CUBE CUBE
+IsLarger DOUBLE DOUBLE
+IsSmaller DOUBLE DOUBLE
+IsEqual DOUBLE DOUBLE
+IsSameString STRING STRING
+IsSameDirection DIRECTION DIRECTION
+IsSameAbility ABILITY ABILITY
+IsPositionEmpty POSITION
+IsSamePosition POSITION POSITION
+Not BOOLEAN
+Or BOOLEAN BOOLEAN
+True
+HadAnEffect
+X%Chance DOUBLE
+GenericBoolean
+IsAlreadyInInventory CUBE
+IsAlreadyInHandOfFaction CUBE DOUBLE
+PositionExists POSITION
+HasCategory CUBE String
+HasPerk PERK
+PerkIsType PERK String
+PerkIsUnique PERK
+PerkExists PERK
+HasPerkOrUpgrade PERK
+SeededX%Chance DOUBLE
+IsType String
+MapNodeIsType DOUBLE String
+XOr BOOLEAN BOOLEAN
+WorldExists
+StringContainsString STRING STRING
+StringExists STRING
+AbilityExists ABILITY
+IsPositionTouchingPosition POSITION POSITION
+IsLimited CUBE
+False
+IsPlaced
+IsCubeInfront
+IsEmptyAbove
+AboveExists
+NoCubeAbove
+IsNotAllyInfront
+HaveMoreThanXMana DOUBLE
+IsALeader CUBE
+BattleOngoing
+FirstMap
+MapLeft
+IsNotInHandOfThis CUBE
+IsCubeTouchingThis CUBE
+IsCubeTouchingCube CUBE CUBE
+IsInShieldArea
+IsInAoEAroundTarget
+IsSurroundedByAllies
+IsDamaged
+IsEnemy CUBE
+IsAlly CUBE
+IsNeutral CUBE
+HasNameOfCube CUBE CUBE
+PerkHasNameOfPerk PERK PERK
+AbilityHasName ABILITY WORD
+CubeHasName CUBE NAME
+ExcludeLastXNodes DOUBLE
+AiBackline
+AiDefense
+AiFrontline
+AiEmptyInfront
+AiAllyInfront
+AiEnemyInfront
+AiEmptyBehind
+AiAllyBehind
+AiEmptyNorth
+AiCubeBelow
+AiEmptySouth
+AiCubeSouth
+AiAllySouth
+AiAllyNorth
+AiEnemySouth
+AiNeutralSouth
+AiLeaderSouth
+AiLeaderBehind
+AiVoidSouth
+AiLiquidSouth
+AiDangerSouth
+AiStacking
+AiAnyDistanceAboveSafety
+AiBurrowing
+AiFlying
+AiMissile
+AiDelay DOUBLE
+AiLimit CONSTANT
+IsCubeOnLeftSide CUBE
+IsTestPerkMoilable
+IsTestPerkCubable
+IsRightTargetFragment
+IsRightEffectFragment
+EffectConnectable
+CubeContainsString CUBE STRING
+RequirementContainsString STRING
+RequirementDamagesCubes
+
+CUBE: 
+Caster
+ARandomCubeWhich BOOLEAN
+Target
+Victim
+Culprit
+Test
+GenericCube
+CubeConstant String
+HiddenCubeConstant String
+CopyOfCube CUBE
+ARandomCubeInLibraryWhich BOOLEAN
+ARandomCubeInHandOfFactionWhich DOUBLE BOOLEAN
+CubeInDirectionFromCube DIRECTION CUBE
+CombinationOf2Cubes CUBE CUBE
+CubeOfPosition POSITION
+ARandomRarityBasedCubeInLibraryWhich DOUBLE BOOLEAN
+TheFirstCubeInHandOfFactionWhich DOUBLE BOOLEAN
+TheFirstCubeInDirectionFromPositionWhich DIRECTION POSITION BOOLEAN
+WorldCube
+Storage
+APRandomCubeInLibraryWhich BOOLEAN
+ARandomCubeInInventoryWhich BOOLEAN
+TheXSlotInHandOfFaction DOUBLE DOUBLE
+CopyWithAction CUBE Action
+AnchoredCube CUBE
+InfoCubeXOfAbility DOUBLE ABILITY
+ARandomReferenceCubeOfCubeWhich CUBE BOOLEAN
+RequirementCube
+Null
+ARandomEnemy
+ARandomAlly
+ARandomDamagedAlly
+ARandomNotLeaderEnemy
+ARandomLeaderOfFaction DOUBLE
+ARandomAlliedLeader
+ARandomCube
+FreeCopy CUBE
+NeutralCopy CUBE
+ARandomDragonEgg
+CubeUpgradeImage
+
+DIRECTION: 
+Forwards
+DirectionConstant int
+ReverseDirection DIRECTION
+EventDirection
+GenericDirection
+DirectionFromDouble DOUBLE
+RotateClock DIRECTION
+RotateCounterClock DIRECTION
+DirectionFromPosToPos POSITION POSITION
+North
+East
+South
+West
+Backwards
+RandomDirection
+GravityDirection
+
+DOUBLE: 
+DoubleConstant double
+TimeConstant int
+EventAmount
+EventFaction
+MaxHpOfCube CUBE
+HpOfCube CUBE
+RarityOfCube CUBE
+ManaCostOfCube CUBE
+FactionOfCube CUBE
+GetVariableOnCube String CUBE
+RemainingLives
+MaxManaOfFaction DOUBLE
+ManaOfFaction DOUBLE
+XOfPosition POSITION
+YOfPosition POSITION
+GenericDouble
+GenericConstant
+GenericTime
+GenericStacking
+HandSizeOfFaction DOUBLE
+AmountOfCubesWhich BOOLEAN
+WorldTime
+MaxWorldX
+StartingMaxWorldX
+MaxWorldY
+StartingMaxWorldY
+GetCampaignVariable String
+DistanceOfPositions POSITION POSITION
+PlacabilityOfPosition POSITION
+GetBestScore String
+ValueOfPerk PERK
+AmountOfPerksInInventoryWhich BOOLEAN
+AmountOfCubesInInventoryWhich BOOLEAN
+LetterCount STRING
+VowelCount STRING
+KonsonantCount STRING
+StackingDouble double
+GetStackingOfAbilityOnCube String CUBE
+AmountOfAbilitiesOfCube CUBE
+DescriptionValue double
+TimeSpeed
+ScalingOfCube CUBE
+PressureOfCube CUBE
+Test
+ARandomMapNodeWhich BOOLEAN
+DoubleFromDirection DIRECTION
+CopiableAbilitiesOfPerk PERK
+AmountOfCubesInHandOfFactionWhich DOUBLE BOOLEAN
+PerkInventorySlot
+CharCount STRING
+AmountOfAbilitiesOfCubeWhich CUBE BOOLEAN
+StackingOfAbility ABILITY
+PerkConnectionOfAbility ABILITY
+GetDelayOfSlotXOfFactionY DOUBLE DOUBLE
+UsesOfCube CUBE
+HandSlotOfCube CUBE
+Addition DOUBLE DOUBLE
+Subtraction DOUBLE DOUBLE
+Division DOUBLE DOUBLE
+Lowest DOUBLE DOUBLE
+Highest DOUBLE DOUBLE
+Multiplication DOUBLE DOUBLE
+AbsoluteAmount DOUBLE
+RandomRoundBetweenXtoY DOUBLE DOUBLE
+RoundedDown DOUBLE
+Minus DOUBLE
+InvertedFaction DOUBLE
+% DOUBLE DOUBLE
+Power DOUBLE DOUBLE
+1/2
+FactionOfThis
+EnemyFaction
+Currency
+Difficulty
+CurrentMapNode
+MapNodeAmount
+Nightmares
+DifficultyXP
+AmountOfAbilitiesOfCubeWithName CUBE WORD
+GetEnergy
+
+PERK: 
+Target
+Test
+PerkConstant String
+ARandomPerkInInventoryWhich BOOLEAN
+ARandomPerkInLibraryWhich BOOLEAN
+ARandomPerkInLibraryAllowingLOCKEDWhich BOOLEAN
+PerkNInInventory DOUBLE
+UpgradeOfPerk PERK
+GenericPerk
+
+POSITION: 
+PositionInDirectionFromPosition DIRECTION POSITION
+PositionOfCube CUBE
+OriginalPosition
+PositionXInfrontYBelowPosition DOUBLE DOUBLE POSITION
+PositionFromXAndY DOUBLE DOUBLE
+GenericPosition
+ARandomPositionWhich BOOLEAN
+Test
+PositionOfThis
+PositionInDirectionFromThis DIRECTION
+TopPositionAboveCube CUBE
+ARandomPosition
+ARandomLeftPosition
+ARandomTopPosition
+ARandomRightPosition
+
+ABILITY: 
+AbilityConstant Ability
+AffectedAbility
+ThisAbility
+Target
+Test
+RandomGeneratedAbility
+CopyWithAction ABILITY Action
+ARandomAbilityOfCubeWhich CUBE BOOLEAN
+FirstAbilityOfCubeWhich CUBE BOOLEAN
+NthAbilityOfCubeWhich DOUBLE CUBE BOOLEAN
+GenericAbility
+StringResolvedAbility STRING
+
+STRING: 
+ScenarioOfMapNode DOUBLE
+NameOfCube CUBE
+NameOfPerk PERK
+NameOfAbility ABILITY
+DescriptionOfAbility ABILITY
+StringFromDouble DOUBLE
+StringMissingLetterX STRING DOUBLE
+StringMissingCharX STRING DOUBLE
+GetVariableOnCube String CUBE
+StringConstant String
+StringTextConstant String
+GenericString
+RandomName
+StringAddition STRING STRING
+SpaceAddition STRING STRING
+GenericWord
+GenericName
+IfElse BOOLEAN STRING STRING
+StringEmpty
+CurrentScenario
+CauseType
+GetCampaignVariable STRING
