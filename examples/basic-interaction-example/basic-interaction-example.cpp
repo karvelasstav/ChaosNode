@@ -264,21 +264,17 @@ struct Example :
             {
                 std::string cat = trimmed.substr(0, trimmed.size() - 1);
 
-                hasCategory = true;
-                if (cat == "Trigger")   currentCategory = PinType::Trigger;
-                else if (cat == "Action")    currentCategory = PinType::Action;
-                else if (cat == "BOOLEAN")   currentCategory = PinType::Boolean;
-                else if (cat == "CUBE")      currentCategory = PinType::Cube;
-                else if (cat == "DIRECTION") currentCategory = PinType::Direction;
-                else if (cat == "DOUBLE")    currentCategory = PinType::Double;
-                else if (cat == "PERK")      currentCategory = PinType::Perk;
-                else if (cat == "POSITION")  currentCategory = PinType::Position;
-                else if (cat == "STRING")    currentCategory = PinType::String;
-                else if (cat == "ABILITY")   currentCategory = PinType::Ability;
+                
+                PinType pt;
+                if (PinTypeFromString(cat, pt))
+                {
+                    currentCategory = pt;
+                    hasCategory = true;
+                }
                 else
-                    hasCategory = false; // unknown category, skip until next known
-
-                continue;
+                {
+                    hasCategory = false;
+                }
             }
 
             if (!hasCategory)
@@ -349,29 +345,7 @@ struct Example :
             {
                 const std::string& t = tokens[i];
                 PinType pt;
-                bool isType = true;
-
-                std::string up = t;
-                std::transform(up.begin(), up.end(), up.begin(),
-                    [](unsigned char c) { return std::toupper(c); });
-
-
-
-                if (up == "ABILITY")                  pt = PinType::Ability;
-                else if (up == "ACTION")              pt = PinType::Action;
-                else if (up == "BOOLEAN")             pt = PinType::Boolean;
-                else if (up == "CUBE")                pt = PinType::Cube;
-                else if (up == "DIRECTION")           pt = PinType::Direction;
-                else if (up == "DOUBLE" || up == "TIME" ||
-                    up == "CONSTANT" || up == "STACKING")
-                    pt = PinType::Double;
-                else if (up == "PERK")                pt = PinType::Perk;
-                else if (up == "POSITION")            pt = PinType::Position;
-                else if (up == "STRING" || up == "WORD" || up == "NAME")
-                    pt = PinType::String;
-                else if (up == "TRIGGER")             pt = PinType::Trigger;
-                else
-                    isType = false;
+                bool isType = PinTypeFromString(t, pt);
 
                 if (isType)
                 {
@@ -404,7 +378,7 @@ struct Example :
             ed::BeginPin(node->InputPin->ID, ed::PinKind::Input);
             ImColor col = GetPinColor(node->InputPin->Type);
             ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)col);
-            ImGui::Text("%s", ToString(node->InputPin->Type));
+            ImGui::Text("%s", PinTypeToString(node->InputPin->Type));
             ImGui::PopStyleColor();
             ed::EndPin();
         }
@@ -423,7 +397,7 @@ struct Example :
                 ed::BeginPin(out->ID, ed::PinKind::Output);
                 ImColor col = GetPinColor(out->Type);
                 ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)col);
-                ImGui::Text("%s", ToString(out->Type));
+                ImGui::Text("%s", PinTypeToString(out->Type));
                 ImGui::PopStyleColor();
                 ed::EndPin();
             }
@@ -731,7 +705,7 @@ struct Example :
                 if (idx >= toks.size())
                 {
                     g_TextToParse += "\nerror: unexpected end of input while expecting ";
-                    g_TextToParse += ToString(expected);
+                    g_TextToParse += PinTypeToString(expected);
                     return nullptr;
                 }
 
@@ -740,47 +714,80 @@ struct Example :
 
                 if (f)
                 {
-                    // Check input type
-                    if (f->input != expected)
+                    // If input type matches, normal function handling.
+                    if (CanConnectPinTypes(f->input, expected))
                     {
-                        g_TextToParse += "\nerror: type mismatch at token '";
-                        g_TextToParse += tok;
-                        g_TextToParse += "': function expects ";
-                        g_TextToParse += ToString(f->input);
-                        g_TextToParse += " but parent needed ";
-                        g_TextToParse += ToString(expected);
-                        return nullptr;
+                        Node* node = NodeFromFunciton(*f, ImVec2(0, 0));
+                        if (!node) return nullptr;
+
+                        for (int p = 0; p < f->output_size; ++p)
+                        {
+                            Node* child = ParseExpr(toks, idx, f->output[p]);
+                            if (!child)
+                                return node; // keep partial graph, error already reported
+
+                            node->OutputNodes[p] = child;
+                            child->InputNode = node;
+
+                            m_Links.push_back({
+                                ed::LinkId(m_NextLinkId++),
+                                child->InputPin->ID,
+                                node->OutputPins[p]->ID
+                                });
+                        }
+
+                        return node;
                     }
 
-                    Node* node = NodeFromFunciton(*f, ImVec2(0, 0));
-                    if (!node) return nullptr;
+                    // --- New special-case logic: treat Trigger->void functions as ABILITY constants ---
+                    bool hasAnyOverload = false;
+                    bool allTriggerVoid = true;
 
-                    for (int p = 0; p < f->output_size; ++p)
+                    for (const auto& cand : funcs)
                     {
-                        Node* child = ParseExpr(toks, idx, f->output[p]);
-                        if (!child)
-                            return node; // we already reported error; keep partial graph
+                        if (cand.Name != tok)
+                            continue;
 
-                        // Connect node -> child
-                        node->OutputNodes[p] = child;
-                        child->InputNode = node;
+                        hasAnyOverload = true;
 
-                        // Create link (input side = child's InputPin, output side = node's OutputPins[p])
-                        m_Links.push_back({
-                            ed::LinkId(m_NextLinkId++),
-                            child->InputPin->ID,
-                            node->OutputPins[p]->ID
-                            });
+                        // We only "whitelist" functions that are Trigger input and no outputs.
+                        if (!(cand.input == PinType::Trigger && cand.output_size == 0))
+                        {
+                            allTriggerVoid = false;
+                            break;
+                        }
                     }
 
-                    return node;
+                    if (hasAnyOverload && allTriggerVoid && (expected == PinType::ABILITY|| expected==PinType::Ability))
+                    {
+                        // Interpret this token as a constant of type ABILITY, as requested.
+                        Node* c = MakeBasicNode(
+                            tok,
+                            PinType::ABILITY,          // constant type you wanted
+                            {},
+                            ImVec2(0, 0),
+                            "",
+                            NodeType::Constant
+                        );
+                        return c;
+                    }
+
+                    // Fallback: real type mismatch error like before
+                    g_TextToParse += "\nerror: type mismatch at token '";
+                    g_TextToParse += tok;
+                    g_TextToParse += "': function expects ";
+                    g_TextToParse += PinTypeToString(f->input);
+                    g_TextToParse += " but parent needed ";
+                    g_TextToParse += PinTypeToString(expected);
+                    return nullptr;
                 }
                 else
                 {
-                    // Constant node
+                    // Still no function with that name at all: create constant of the expected type (old behaviour)
                     Node* c = MakeBasicNode(tok, expected, {}, ImVec2(0, 0), "", NodeType::Constant);
                     return c;
                 }
+
             };
 
         // 5) Parse each graph, create Primary Root
@@ -1066,11 +1073,23 @@ struct Example :
 
                     }
                 }
+                PinType inputType;
+                PinType outputType;
+
+                if (Aisinput)
+                {
+                    inputType = Btype;
+                    outputType = Atype;
+                }
+                else
+                {
+                    inputType = Atype;
+                    outputType = Btype;
+                }
 
 
 
-
-                if (InputPinId && OutputPinId && (Aisinput ^ Bisinput) && (n1 != n2) && (Atype == Btype)) // both are valid, let's accept link
+                if (InputPinId && OutputPinId && (Aisinput ^ Bisinput) && (n1 != n2) && CanConnectPinTypes(inputType, outputType)) // both are valid, let's accept link
                 {
 
 
@@ -1244,11 +1263,13 @@ struct Example :
             // Position popup near where the user opened it
             ImGui::SetNextWindowPos(m_CreateNodePopupPos, ImGuiCond_Appearing);
             ImGui::SetNextWindowSize(ImVec2(450, 500), ImGuiCond_FirstUseEver);
-            ImGuiWindowFlags flags =  ImGuiWindowFlags_NoSavedSettings
+            ImGuiWindowFlags flags = ImGuiWindowFlags_NoSavedSettings
                 | ImGuiWindowFlags_NoCollapse;
 
             if (ImGui::Begin("Create Node", &m_ShowCreateNode, flags))
             {
+                const auto& allTypes = GetAllPinTypes();
+
                 if (m_FocusCreateNodeSearch)
                 {
                     ImGui::SetKeyboardFocusHere();
@@ -1258,69 +1279,60 @@ struct Example :
                 ImGui::Text("Search function:");
                 ImGui::InputText("##Filter", m_CreateNodeFilter, IM_ARRAYSIZE(m_CreateNodeFilter));
 
-                // Type filter combo
-                // 0 = All, 1..N map to PinType values
-                static const PinType s_TypeOptions[] = {
-                    PinType::Trigger,
-                    PinType::Action,
-                    PinType::Boolean,
-                    PinType::Cube,
-                    PinType::Direction,
-                    PinType::Double,
-                    PinType::Perk,
-                    PinType::Position,
-                    PinType::String,
-                    PinType::Ability
-                };
-
-                const char* typeLabels[] = {
-                    "All",
-                    "Trigger",
-                    "Action",
-                    "Boolean",
-                    "Cube",
-                    "Direction",
-                    "Double",
-                    "Perk",
-                    "Position",
-                    "String",
-                    "Ability"
-                };
-
-                static_assert(IM_ARRAYSIZE(typeLabels) == IM_ARRAYSIZE(s_TypeOptions) + 1,
-                    "Labels and type options size mismatch");
-
+                // -----------------------------
+                // Type filter combo (0 = All)
+                // -----------------------------
                 ImGui::Separator();
 
                 ImGui::Text("Input type:");
                 ImGui::SameLine();
-                if (ImGui::BeginCombo("##TypeFilter", typeLabels[m_CreateNodeTypeFilter]))
+
+                const char* typeFilterLabel =
+                    (m_CreateNodeTypeFilter == 0)
+                    ? "All"
+                    : allTypes[m_CreateNodeTypeFilter - 1].label;
+
+                if (ImGui::BeginCombo("##TypeFilter", typeFilterLabel))
                 {
-                    for (int i = 0; i < IM_ARRAYSIZE(typeLabels); ++i)
+                    // "All"
+                    bool selected = (m_CreateNodeTypeFilter == 0);
+                    if (ImGui::Selectable("All", selected))
+                        m_CreateNodeTypeFilter = 0;
+                    if (selected)
+                        ImGui::SetItemDefaultFocus();
+
+                    // Actual types
+                    for (int i = 0; i < (int)allTypes.size(); ++i)
                     {
-                        bool selected = (i == m_CreateNodeTypeFilter);
-                        if (ImGui::Selectable(typeLabels[i], selected))
-                            m_CreateNodeTypeFilter = i;
-                        if (selected)
+                        bool sel = (m_CreateNodeTypeFilter == i + 1);
+                        if (ImGui::Selectable(allTypes[i].label, sel))
+                            m_CreateNodeTypeFilter = i + 1;
+                        if (sel)
                             ImGui::SetItemDefaultFocus();
                     }
+
                     ImGui::EndCombo();
                 }
 
-
+                // -----------------------------
+                // Quick create
+                // -----------------------------
                 ImGui::Separator();
                 ImGui::Text("Quick create:");
 
                 // Constant type selection
-                static int s_ConstTypeIndex = 1; // index into typeLabels, 1..N (skip "All")
+                static int s_ConstTypeIndex = 0; // index into allTypes (0..N-1)
                 ImGui::Text("Constant of type:");
                 ImGui::SameLine();
-                if (ImGui::BeginCombo("##ConstType", typeLabels[s_ConstTypeIndex]))
+
+                const char* constTypeLabel = allTypes[s_ConstTypeIndex].label;
+
+                if (ImGui::BeginCombo("##ConstType", constTypeLabel))
                 {
-                    for (int i = 1; i < IM_ARRAYSIZE(typeLabels); ++i) // skip "All"
+                    for (int i = 0; i < (int)allTypes.size(); ++i)
                     {
                         bool selected = (i == s_ConstTypeIndex);
-                        if (ImGui::Selectable(typeLabels[i], selected))
+                        if (ImGui::Selectable(allTypes[i].label, selected))
                             s_ConstTypeIndex = i;
                         if (selected)
                             ImGui::SetItemDefaultFocus();
@@ -1330,9 +1342,8 @@ struct Example :
 
                 if (ImGui::Button("Create Constant"))
                 {
-                    // Map selection to PinType
-                    PinType chosenType = s_TypeOptions[s_ConstTypeIndex - 1];
-                    std::string nodeName = std::string("Constant");
+                    PinType chosenType = allTypes[s_ConstTypeIndex].type;
+                    std::string nodeName = "Constant";
 
                     // 1 input (chosen type), no outputs, NodeType::Constant
                     Node* constantNode = MakeBasicNode(
@@ -1351,15 +1362,18 @@ struct Example :
                 }
 
                 // Root type selection
-                static int s_RootTypeIndex = 1; // index into typeLabels, 1..N (skip "All")
+                static int s_RootTypeIndex = 0; // index into allTypes
                 ImGui::Text("Root of type:");
                 ImGui::SameLine();
-                if (ImGui::BeginCombo("##RootType", typeLabels[s_RootTypeIndex]))
+
+                const char* rootTypeLabel = allTypes[s_RootTypeIndex].label;
+
+                if (ImGui::BeginCombo("##RootType", rootTypeLabel))
                 {
-                    for (int i = 1; i < IM_ARRAYSIZE(typeLabels); ++i) // skip "All"
+                    for (int i = 0; i < (int)allTypes.size(); ++i)
                     {
                         bool selected = (i == s_RootTypeIndex);
-                        if (ImGui::Selectable(typeLabels[i], selected))
+                        if (ImGui::Selectable(allTypes[i].label, selected))
                             s_RootTypeIndex = i;
                         if (selected)
                             ImGui::SetItemDefaultFocus();
@@ -1369,9 +1383,8 @@ struct Example :
 
                 if (ImGui::Button("Create Root"))
                 {
-                    // Map selection to PinType
-                    PinType chosenType = s_TypeOptions[s_RootTypeIndex - 1];
-                    std::string nodeName = std::string("Root");
+                    PinType chosenType = allTypes[s_RootTypeIndex].type;
+                    std::string nodeName = "Root";
 
                     // Use Action as dummy input type as requested.
                     // NodeType::Primary hides the input pin in DrawNode.
@@ -1413,7 +1426,7 @@ struct Example :
                     // Type filter
                     if (m_CreateNodeTypeFilter != 0)
                     {
-                        PinType expected = s_TypeOptions[m_CreateNodeTypeFilter - 1];
+                        PinType expected = allTypes[m_CreateNodeTypeFilter - 1].type;
                         if (f.input != expected)
                             continue;
                     }
@@ -1429,7 +1442,7 @@ struct Example :
 
                     // Build inline signature: "InputType -> Out1, Out2" / "InputType -> void"
                     std::string sig;
-                    sig += ToString(f.input);
+                    sig += PinTypeToString(f.input);
                     sig += " -> ";
 
                     if (f.output_size <= 0)
@@ -1442,7 +1455,7 @@ struct Example :
                         {
                             if (oi > 0)
                                 sig += ", ";
-                            sig += ToString(f.output[oi]);
+                            sig += PinTypeToString(f.output[oi]);
                         }
                     }
 
