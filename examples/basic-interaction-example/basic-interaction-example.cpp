@@ -699,6 +699,9 @@ struct Example :
 
 
         // 4) Recursive expression parser
+
+
+        // 4) Recursive expression parser
         std::function<Node* (const std::vector<std::string>&, size_t&, PinType)> ParseExpr =
             [&](const std::vector<std::string>& toks, size_t& idx, PinType expected) -> Node*
             {
@@ -714,8 +717,8 @@ struct Example :
 
                 if (f)
                 {
-                    // If input type matches, normal function handling.
-                    if (CanConnectPinTypes(f->input, expected))
+                    //    Parent's output (expected) must flow into f->input.
+                    if (CanConnectPinTypes(/*inputType=*/f->input, /*outputType=*/expected))
                     {
                         Node* node = NodeFromFunciton(*f, ImVec2(0, 0));
                         if (!node) return nullptr;
@@ -739,31 +742,13 @@ struct Example :
                         return node;
                     }
 
-                    // --- New special-case logic: treat Trigger->void functions as ABILITY constants ---
-                    bool hasAnyOverload = false;
-                    bool allTriggerVoid = true;
-
-                    for (const auto& cand : funcs)
+                    // 2) Relaxed rule: if this function takes Trigger as input,
+                    //    and we couldn't connect it, treat token as a constant of `expected`.
+                    if (f->input == PinType::Trigger)
                     {
-                        if (cand.Name != tok)
-                            continue;
-
-                        hasAnyOverload = true;
-
-                        // We only "whitelist" functions that are Trigger input and no outputs.
-                        if (!(cand.input == PinType::Trigger && cand.output_size == 0))
-                        {
-                            allTriggerVoid = false;
-                            break;
-                        }
-                    }
-
-                    if (hasAnyOverload && allTriggerVoid && (expected == PinType::ABILITY|| expected==PinType::Ability))
-                    {
-                        // Interpret this token as a constant of type ABILITY, as requested.
                         Node* c = MakeBasicNode(
                             tok,
-                            PinType::ABILITY,          // constant type you wanted
+                            expected,  // "matching constant of the previous type"
                             {},
                             ImVec2(0, 0),
                             "",
@@ -772,7 +757,7 @@ struct Example :
                         return c;
                     }
 
-                    // Fallback: real type mismatch error like before
+                    // 3) Genuine type mismatch
                     g_TextToParse += "\nerror: type mismatch at token '";
                     g_TextToParse += tok;
                     g_TextToParse += "': function expects ";
@@ -783,14 +768,13 @@ struct Example :
                 }
                 else
                 {
-                    // Still no function with that name at all: create constant of the expected type (old behaviour)
+                    // No function with that name at all -> constant of expected type
                     Node* c = MakeBasicNode(tok, expected, {}, ImVec2(0, 0), "", NodeType::Constant);
                     return c;
                 }
-
             };
 
-        // 5) Parse each graph, create Primary Root
+      // 5) Parse each graph, create Primary Root
         for (auto& g : graphs)
         {
             if (g.empty())

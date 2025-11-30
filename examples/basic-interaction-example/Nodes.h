@@ -185,17 +185,48 @@ inline bool CanConnectPinTypes(PinType inputType, PinType outputType)
         // numeric-ish
         { PinType::DOUBLE,  PinType::double_ },
         { PinType::DOUBLE,  PinType::Int     },
-        { PinType::double_, PinType::Int     },
+
+        {PinType::Int, PinType::DOUBLE},
+        {PinType::Int, PinType::double_},
+        {PinType::Int, PinType::CONSTANT},
+        {PinType::Int, PinType::STACKING},
+        {PinType::Int, PinType::TIME },
+
+        {PinType::CONSTANT, PinType::DOUBLE},
+        {PinType::CONSTANT, PinType::double_},
+        {PinType::CONSTANT, PinType::Int},
+        {PinType::CONSTANT, PinType::STACKING},
+        {PinType::CONSTANT, PinType::TIME },
+
+        {PinType::TIME, PinType::DOUBLE},
+        {PinType::TIME, PinType::double_},
+        {PinType::TIME, PinType::Int},
+        {PinType::TIME, PinType::STACKING},
+        {PinType::TIME, PinType::CONSTANT},
+
+
+
+        {PinType::STACKING, PinType::DOUBLE},
+        {PinType::STACKING, PinType::double_},
+        {PinType::STACKING, PinType::Int},
+        {PinType::STACKING, PinType::CONSTANT},
+        {PinType::STACKING, PinType::TIME },
 
         // string-ish
         { PinType::STRING,  PinType::String  },
+        { PinType::STRING,  PinType::NAME  },
+        { PinType::STRING,  PinType::WORD  },
+
+        { PinType::NAME,  PinType::String  },
+        { PinType::NAME,  PinType::STRING },
+        { PinType::NAME,  PinType::WORD  },
+
+        { PinType::WORD,  PinType::String  },
+        { PinType::WORD,  PinType::STRING },
+        { PinType::WORD,  PinType::NAME  },
 
         // ability variants
         { PinType::ABILITY, PinType::Ability },
-
-        // add more rules here:
-        // { PinType::TIME,    PinType::Int     },
-        // { PinType::POSITION, PinType::CUBE   },
     };
 
     for (const auto& c : s_conversions)
